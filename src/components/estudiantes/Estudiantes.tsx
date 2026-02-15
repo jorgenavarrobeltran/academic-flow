@@ -416,7 +416,7 @@ export function Estudiantes() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-sm text-[#626a72]">{estudiante.codigo}</td>
+                        <td className="py-3 px-4 text-sm text-[#626a72]">{estudiante.codigo || '-'}</td>
                         <td className="py-3 px-4 text-sm text-[#626a72]">{estudiante.programa}</td>
                         <td className="py-3 px-4 text-center text-sm">{estudiante.semestre}°</td>
                         <td className="py-3 px-4 text-center">
@@ -492,7 +492,7 @@ export function Estudiantes() {
                   </Avatar>
                   <div>
                     <p>{estudianteSeleccionado.nombre} {estudianteSeleccionado.apellido}</p>
-                    <p className="text-sm text-[#626a72] font-normal">{estudianteSeleccionado.codigo}</p>
+                    <p className="text-sm text-[#626a72] font-normal">{estudianteSeleccionado.codigo || '-'}</p>
                   </div>
                 </DialogTitle>
                 <DialogDescription>

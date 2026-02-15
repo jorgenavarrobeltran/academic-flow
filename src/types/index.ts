@@ -22,7 +22,7 @@ export interface Docente extends Usuario {
 
 export interface Estudiante extends Usuario {
   rol: 'estudiante';
-  codigo: string;
+  codigo?: string;
   programa: Programa;
   semestre: number;
   promedioAcumulado?: number;
