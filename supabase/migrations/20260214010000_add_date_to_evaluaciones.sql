@@ -1,0 +1,2 @@
+ALTER TABLE public.evaluaciones 
+ADD COLUMN fecha DATE DEFAULT CURRENT_DATE;

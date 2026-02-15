@@ -1,0 +1,332 @@
+// Tipos del Sistema de Gestión Académica - AcademicFlow Pro
+
+export interface Usuario {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  rol: 'docente' | 'estudiante';
+  fotoUrl?: string;
+  telefono?: string;
+  fechaRegistro: Date;
+  activo: boolean;
+}
+
+export interface Docente extends Usuario {
+  rol: 'docente';
+  especialidad: string;
+  facultad: string;
+  biografia?: string;
+  horarioAtencion?: string;
+}
+
+export interface Estudiante extends Usuario {
+  rol: 'estudiante';
+  codigo: string;
+  programa: Programa;
+  semestre: number;
+  promedioAcumulado?: number;
+  // Nuevos datos de perfil académico y demográfico
+  documentoIdentidad?: string;
+  fechaNacimiento?: Date;
+  genero?: 'Masculino' | 'Femenino' | 'Otro' | 'Prefiero no decir';
+  esHomologante?: boolean; // Diferencia académica crítica
+  haVistoClaseAntes?: boolean; // Si ha sido alumno tuyo previamente
+  celular?: string;
+}
+
+export type Programa =
+  | 'Ingeniería de Sistemas'
+  | 'Ingeniería Industrial'
+  | 'Contaduría Pública'
+  | 'Administración de Empresas';
+
+export type Asignatura =
+  | 'Formación del Espíritu Científico'
+  | 'Metodología de la Investigación'
+  | 'Metodología I'
+  | 'Metodología II'
+  | 'Metodología III'
+  | 'Metodología IV'
+  | 'Anteproyecto'
+  | 'Proyecto de Investigación'
+  | 'Seminario de Investigación';
+
+export interface Curso {
+  id: string;
+  codigo: string;
+  nombre: string;
+  asignatura: Asignatura;
+  semestre: string; // Ej: "2026-1"
+  grupo: string; // Ej: "A", "B"
+  docenteId: string;
+  estudiantes: EstudianteCurso[];
+  configuracionNotas: ConfiguracionNotas;
+  fechaInicio: Date; // Primera clase del semestre
+  fechaFin: Date; // Última clase = fecha del examen final
+  diasClase: number[]; // Días de la semana (0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb)
+  horaInicio: string; // Ej: "08:00"
+  horaFin: string; // Ej: "10:00"
+  aula?: string; // Ej: "A313", "B403"
+  programa?: string; // Ej: "Ingeniería Industrial"
+  activo: boolean;
+  archivado: boolean;
+}
+
+export interface EstudianteCurso {
+  estudianteId: string;
+  fechaInscripcion: Date;
+  asistencias: Asistencia[];
+  notas: Nota[];
+  grupoId?: string;
+  // Mapped fields from store
+  nombre?: string;
+  apellido?: string; // Optional since we map it but it is part of full name in DB
+  email?: string;
+  codigo?: string;
+  fotoUrl?: string;
+}
+
+export interface ConfiguracionNotas {
+  cortes: Corte[];
+  componentes: ComponenteNota[];
+}
+
+export interface Corte {
+  numero: 1 | 2 | 3;
+  porcentaje: number; // 30, 30, 40
+  fechaInicio: Date;
+  fechaFin: Date;
+  cerrado: boolean;
+}
+
+export interface ComponenteNota {
+  id: string;
+  nombre: string;
+  porcentaje: number; // Dentro del corte
+  tipo: 'quiz' | 'taller' | 'participacion' | 'parcial' | 'otro';
+}
+
+// Simplified Nota for Cortes system
+export interface Calificacion {
+  id: string;
+  estudianteId: string;
+  cursoId: string;
+  corte1: { nota: number; observacion?: string };
+  corte2: { nota: number; observacion?: string };
+  corte3: { nota: number; observacion?: string };
+  updatedAt: Date;
+}
+
+export interface Evaluacion {
+  id: string;
+  cursoId: string;
+  corte: 1 | 2 | 3;
+  nombre: string;
+  porcentaje: number; // 0-100
+  esGrupal: boolean;
+  fecha?: Date; // Fecha de realización
+  createdAt?: Date;
+}
+
+export interface NotaActividad {
+  id: string;
+  evaluacionId: string;
+  estudianteId: string;
+  valor: number; // 0.0 - 5.0
+  updatedAt: Date;
+}
+
+// Deprecated: Old complex Nota
+export interface Nota {
+  id: string;
+  estudianteId: string;
+  cursoId: string;
+  corte: 1 | 2 | 3;
+  componenteId?: string; // ID del componente de nota (quiz, taller, etc.)
+  valor: number;
+  fechaRegistro?: Date;
+}
+
+export type EstadoAsistencia = 'presente' | 'ausente' | 'tarde' | 'justificado';
+
+export interface Asistencia {
+  id: string;
+  estudianteId: string;
+  cursoId: string;
+  fecha: Date;
+  estado: EstadoAsistencia;
+  observacion?: string;
+  justificacion?: string;
+  soporteUrl?: string;
+  aprobada?: boolean;
+}
+
+export interface Grupo {
+  id: string;
+  cursoId: string;
+  nombre: string;
+  descripcion?: string;
+  integrantes: string[]; // IDs de estudiantes
+  proyecto?: string;
+  notaGrupal?: number;
+  fechaCreacion: Date;
+}
+
+export interface ProyectoInvestigacion {
+  id: string;
+  estudianteId?: string;
+  grupoId?: string;
+  cursoId: string;
+  titulo: string;
+  etapaActual: EtapaProyecto;
+  etapas: HistorialEtapa[];
+  avances: AvanceProyecto[];
+  fechaInicio: Date;
+  fechaFin?: Date;
+}
+
+export type EtapaProyecto =
+  | 'planteamiento'
+  | 'objetivos'
+  | 'marco_teorico'
+  | 'justificacion'
+  | 'hipotesis'
+  | 'metodologia'
+  | 'cronograma'
+  | 'recoleccion'
+  | 'analisis'
+  | 'conclusiones'
+  | 'defensa';
+
+export interface HistorialEtapa {
+  etapa: EtapaProyecto;
+  fechaInicio: Date;
+  fechaFin?: Date;
+  estado: 'pendiente' | 'en_progreso' | 'revisado' | 'aprobado';
+}
+
+export interface AvanceProyecto {
+  id: string;
+  etapa: EtapaProyecto;
+  version: string;
+  descripcion: string;
+  archivoUrl?: string;
+  fechaSubida: Date;
+  retroalimentacion?: string;
+  calificacion?: number;
+}
+
+export interface EventoCalendario {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  fechaInicio: Date;
+  fechaFin?: Date;
+  tipo: 'clase' | 'parcial' | 'entrega' | 'festivo' | 'reunion' | 'receso' | 'corte' | 'limite_notas' | 'otro';
+  cursoId?: string;
+  todoElDia: boolean;
+  alertaEnviada: boolean;
+}
+
+export interface Alerta {
+  id: string;
+  tipo: 'riesgo_academico' | 'inasistencia' | 'fecha_limite' | 'entrega_pendiente' | 'nota_disponible' | 'general';
+  titulo: string;
+  mensaje: string;
+  fecha: Date;
+  leida: boolean;
+  cursoId?: string;
+  estudianteId?: string;
+  accionUrl?: string;
+  prioridad: 'alta' | 'media' | 'baja';
+}
+
+export interface RecursoEducativo {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  tipo: 'video' | 'pdf' | 'curso' | 'podcast' | 'herramienta';
+  url: string;
+  duracion?: number; // en minutos
+  nivel: 'basico' | 'intermedio' | 'avanzado';
+  asignatura: Asignatura;
+  unidadTematica: string;
+  tags: string[];
+  obligatorio: boolean;
+  fechaCreacion: Date;
+}
+
+export interface ProgresoRecurso {
+  recursoId: string;
+  estudianteId: string;
+  completado: boolean;
+  progreso: number; // 0-100
+  fechaInicio?: Date;
+  fechaCompletado?: Date;
+}
+
+export interface Convocatoria {
+  id: string;
+  codigo: string;
+  titulo: string;
+  categoria: 'beca' | 'investigacion' | 'practica' | 'movilidad' | 'premio' | 'auxiliar' | 'financiacion';
+  subcategoria: string;
+  entidadConvocante: string;
+  descripcion: string;
+  requisitos: string[];
+  beneficios: string;
+  fechaApertura: Date;
+  fechaCierre: Date;
+  fechaResultados?: Date;
+  duracion?: string;
+  monto?: string;
+  competitividad: 'alta' | 'media' | 'baja';
+  enlaceOficial: string;
+  documentosAdjuntos: string[];
+  programasObjetivo: Programa[];
+  semestreMinimo?: number;
+  promedioMinimo?: number;
+  estado: 'activa' | 'cerrada' | 'proxima';
+  alcance: 'todos' | 'programas' | 'cursos';
+  cursosIds?: string[]; // IDs de los cursos si alcance es 'cursos' (por ejemplo, para convocatorias de semilleros de un curso específico)
+}
+
+export interface Postulacion {
+  id: string;
+  convocatoriaId: string;
+  estudianteId: string;
+  estado: 'interesado' | 'en_proceso' | 'postulado' | 'seleccionado' | 'no_seleccionado';
+  documentos: DocumentoPostulacion[];
+  fechaInicio: Date;
+  fechaEnvio?: Date;
+  notas?: string;
+}
+
+export interface DocumentoPostulacion {
+  nombre: string;
+  url: string;
+  subido: boolean;
+  fechaSubida?: Date;
+}
+
+export interface EstadisticasCurso {
+  totalEstudiantes: number;
+  promedioAsistencia: number;
+  promedioGeneral: number;
+  estudiantesRiesgo: number;
+  estudiantesPeligro: number;
+  distribucionNotas: {
+    excelente: number; // 5.0
+    sobresaliente: number; // 4.6-4.9
+    bueno: number; // 4.0-4.5
+    aceptable: number; // 3.0-3.9
+    noAceptable: number; // 1.0-2.9
+  };
+}
+
+export interface Sesion {
+  usuario: Usuario | null;
+  token?: string;
+  isAuthenticated: boolean;
+}
