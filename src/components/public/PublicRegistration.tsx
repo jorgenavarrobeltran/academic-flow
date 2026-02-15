@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/supabaseClient';
+import { useParams, Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function PublicRegistration() {
     const { cursoId } = useParams<{ cursoId: string }>();
-    const navigate = useNavigate();
+
     const [step, setStep] = useState(1); // 1: Select Name, 2: Create Credentials, 3: Success
     const [course, setCourse] = useState<any>(null);
     const [whitelist, setWhitelist] = useState<any[]>([]);
@@ -137,6 +137,8 @@ export default function PublicRegistration() {
                     rol: 'estudiante'
                 })
                 .eq('id', userId);
+
+            if (profileError) console.error('Error updating profile:', profileError);
 
             // Mark whitelist as claimed
             // Note: This needs RLS policy allowing it, or a server function. 
