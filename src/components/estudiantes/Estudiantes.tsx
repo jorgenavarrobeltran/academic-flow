@@ -47,7 +47,7 @@ const programas: Programa[] = [
 
 export function Estudiantes() {
   const { state } = useStore();
-  const { cursos, cursoSeleccionado, setCursoSeleccionado, moverEstudianteEntreCursos, fetchEstudiantesPorCurso } = useCursos();
+  const { cursos, cursoSeleccionado, setCursoSeleccionado, moverEstudianteEntreCursos, fetchEstudiantesPorCurso, updateEstudiante } = useCursos();
   const { showToast } = useUI();
   const { usuario } = useAuth();
 
@@ -593,10 +593,9 @@ export function Estudiantes() {
                       id="esHomologante"
                       checked={estudianteSeleccionado.esHomologante || false}
                       onCheckedChange={(checked) => {
-                        // Aquí iría la lógica real de actualización en Store/DB
                         const updated = { ...estudianteSeleccionado, esHomologante: !!checked };
                         setEstudianteSeleccionado(updated);
-                        showToast("Perfil actualizado (localmente)", "success");
+                        updateEstudiante(updated);
                       }}
                     />
                     <label htmlFor="esHomologante" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -610,7 +609,7 @@ export function Estudiantes() {
                       onCheckedChange={(checked) => {
                         const updated = { ...estudianteSeleccionado, haVistoClaseAntes: !!checked };
                         setEstudianteSeleccionado(updated);
-                        showToast("Perfil actualizado (localmente)", "success");
+                        updateEstudiante(updated);
                       }}
                     />
                     <label htmlFor="haVistoClase" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">

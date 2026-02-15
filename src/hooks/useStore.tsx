@@ -563,6 +563,36 @@ export function useCursos() {
     }
   }, [dispatch]);
 
+  const updateEstudiante = useCallback(async (estudiante: any) => {
+    try {
+      const { error } = await supabase
+        .from('usuarios')
+        .update({
+          es_homologante: estudiante.esHomologante,
+          ha_visto_clase_antes: estudiante.haVistoClaseAntes,
+          // Map other fields if needed
+        })
+        .eq('id', estudiante.id); // Assuming estudiante.id maps to usuarios.id (which it should for students)
+
+      if (error) throw error;
+
+      dispatch({
+        type: 'SET_TOAST',
+        payload: { message: 'Estudiante actualizado correctamente', type: 'success' }
+      });
+
+      // Optionally refresh local state for that student...
+      // For now, let's assume the caller handles local state update via re-fetch or manual update
+    } catch (error: any) {
+      console.error('Error updating estudiante:', error);
+      dispatch({
+        type: 'SET_TOAST',
+        payload: { message: `Error al actualizar: ${error.message}`, type: 'error' }
+      });
+    }
+  }, [dispatch]);
+
+
   return {
     cursos: state.cursos,
     cursoSeleccionado: state.cursoSeleccionado,
@@ -571,7 +601,8 @@ export function useCursos() {
     updateCurso,
     deleteCurso,
     moverEstudianteEntreCursos,
-    fetchEstudiantesPorCurso
+    fetchEstudiantesPorCurso,
+    updateEstudiante
   };
 }
 
