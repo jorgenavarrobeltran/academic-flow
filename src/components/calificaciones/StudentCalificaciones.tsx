@@ -122,48 +122,72 @@ export function StudentCalificaciones() {
 
             {cursoSeleccionado ? (
                 <>
-                    {/* Summary Card */}
-                    <Card className="bg-slate-900 text-white border-0 shadow-lg overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                        <CardContent className="p-6 relative z-10">
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                                <div className="space-y-2 text-center md:text-left">
-                                    <h3 className="text-lg font-medium text-slate-300">{cursoSeleccionado.nombre}</h3>
-                                    <div className="flex items-baseline gap-2 justify-center md:justify-start">
-                                        <span className="text-4xl font-bold">{definitiva.toFixed(1)}</span>
-                                        <span className="text-sm text-slate-400">/ 5.0</span>
+                    {/* Summary Card - Redesigned */}
+                    <Card className="border-0 shadow-md bg-white overflow-hidden relative">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -translate-y-1/2 translate-x-1/2" />
+                        <CardContent className="p-8 relative z-10">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+                                <div className="space-y-4 text-center md:text-left">
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-slate-800">{cursoSeleccionado.nombre}</h3>
+                                        <p className="text-slate-500 text-sm">Resumen de Rendimiento General</p>
                                     </div>
-                                    <Badge variant={(definitiva >= 3.0) ? "default" : "destructive"} className="px-3 py-1">
-                                        {(definitiva >= 3.0) ? "Aprobando" : "En Riesgo"}
-                                    </Badge>
+
+                                    <div className="flex items-center gap-4 justify-center md:justify-start">
+                                        <div className="flex flex-col">
+                                            <span className={`text-5xl font-bold tracking-tight ${getNotaColor(definitiva)}`}>
+                                                {definitiva.toFixed(1)}
+                                            </span>
+                                            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider text-center">Definitiva</span>
+                                        </div>
+
+                                        <div className="h-12 w-px bg-slate-200 mx-2"></div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <Badge variant={definitiva >= 3.0 ? "default" : "destructive"} className={`px-3 py-1 text-sm ${definitiva >= 3.0 ? 'bg-green-600 hover:bg-green-700' : ''}`}>
+                                                {definitiva >= 3.0 ? "Aprobando" : "En Riesgo"}
+                                            </Badge>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Progress Circular or Bars for Cortes */}
-                                <div className="flex gap-4 md:gap-8 w-full md:w-auto">
+                                {/* Cortes Circles */}
+                                <div className="flex gap-6 md:gap-10">
                                     {[1, 2, 3].map((corte) => {
                                         const stat = stats[corte as 1 | 2 | 3];
+                                        const percentage = corte === 3 ? 40 : 30;
+
                                         return (
-                                            <div key={corte} className="flex flex-col items-center gap-2">
-                                                <div className="relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/5 border border-white/10">
-                                                    <span className={`text-xl font-bold ${getNotaColor(stat.total, 5)}`}>
-                                                        {stat.total.toFixed(1)}
-                                                    </span>
-                                                    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none stroke-current text-blue-500/20" viewBox="0 0 100 100">
-                                                        <circle cx="50" cy="50" r="45" fill="none" strokeWidth="6" />
+                                            <div key={corte} className="flex flex-col items-center gap-3 group">
+                                                <div className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24">
+                                                    {/* Background Circle */}
+                                                    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                                                        <circle cx="50" cy="50" r="45" fill="none" strokeWidth="8" className="stroke-slate-100" />
                                                         <circle
-                                                            cx="50" cy="50" r="45" fill="none" strokeWidth="6"
+                                                            cx="50" cy="50" r="45" fill="none" strokeWidth="8"
+                                                            strokeLinecap="round"
                                                             strokeDasharray="283"
                                                             strokeDashoffset={283 - (283 * (stat.total / 5))}
-                                                            className="text-white transition-all duration-1000 ease-out"
+                                                            className={`transition-all duration-1000 ease-out ${stat.total >= 4.0 ? 'stroke-green-500' :
+                                                                stat.total >= 3.0 ? 'stroke-blue-500' :
+                                                                    stat.total >= 2.0 ? 'stroke-orange-400' : 'stroke-red-500'
+                                                                }`}
                                                         />
                                                     </svg>
+                                                    <div className="flex flex-col items-center">
+                                                        <span className={`text-2xl font-bold text-slate-700`}>
+                                                            {stat.total.toFixed(1)}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-                                                    Corte {corte}
-                                                </span>
-                                                <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-slate-300">
-                                                    {corte === 3 ? '40%' : '30%'}
-                                                </span>
+                                                <div className="text-center">
+                                                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                                                        Corte {corte}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
+                                                        Vale {percentage}%
+                                                    </span>
+                                                </div>
                                             </div>
                                         );
                                     })}
