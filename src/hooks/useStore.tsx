@@ -594,7 +594,28 @@ export function useCursos() {
     }
   }, [dispatch]);
 
+  const uploadWhitelist = useCallback(async (courseId: string, names: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('course_whitelist')
+        .insert(names.map(name => ({ course_id: courseId, full_name: name.trim() })));
 
+      if (error) throw error;
+
+      dispatch({
+        type: 'SET_TOAST',
+        payload: { message: `${names.length} estudiantes añadidos a la lista blanca`, type: 'success' }
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Error uploading whitelist:', error);
+      dispatch({
+        type: 'SET_TOAST',
+        payload: { message: `Error al cargar lista: ${error.message}`, type: 'error' }
+      });
+      return false;
+    }
+  }, [dispatch]);
   return {
     cursos: state.cursos,
     cursoSeleccionado: state.cursoSeleccionado,
@@ -604,7 +625,8 @@ export function useCursos() {
     deleteCurso,
     moverEstudianteEntreCursos,
     fetchEstudiantesPorCurso,
-    updateEstudiante
+    updateEstudiante,
+    uploadWhitelist
   };
 }
 
