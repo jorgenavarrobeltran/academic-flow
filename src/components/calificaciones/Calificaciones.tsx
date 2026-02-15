@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { FileSpreadsheet, Plus, Trash2, Users, Save, AlertCircle } from 'lucide-react';
+import { FileSpreadsheet, Plus, Users, Sparkles, Brain, Settings, Loader2, Trash2, AlertCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { StudentCalificaciones } from './StudentCalificaciones';
 import { supabase } from '@/lib/supabase';
 import { gruposMock } from '@/data/mockData';
@@ -42,6 +43,86 @@ export default function Calificaciones() {
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupMembers, setNewGroupMembers] = useState<string[]>([]);
+
+  // AI Generation State
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiApiKey, setAiApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('manual');
+
+  // AI Logic
+  const handleGenerateAI = async () => {
+    if (!aiApiKey) {
+      setShowApiKeyInput(true);
+      return;
+    }
+    if (!aiPrompt.trim()) return;
+
+    setAiGenerating(true);
+    try {
+      const prompt = `Actúa como un profesor experto. Genera un examen/quiz estructurado en formato JSON basado en las siguientes instrucciones: 
+        "${aiPrompt}"
+        
+        El JSON debe tener esta estructura exacta (sin markdown, solo JSON):
+        {
+            "titulo": "Título de la actividad",
+            "descripcion": "Breve descripción",
+            "preguntas": [
+                {
+                    "id": 1,
+                    "texto": "¿Pregunta?",
+                    "opciones": ["A", "B", "C", "D"],
+                    "respuestaCorrecta": "Índice (0-3) o texto de la respuesta"
+                }
+            ]
+        }`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${aiApiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        // Extract JSON from markdown code blocks if present
+        const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/) || [null, text];
+        const cleanJson = jsonMatch[1] || text;
+
+        try {
+          const parsed = JSON.parse(cleanJson);
+          setNewEvaName(parsed.titulo || "Nota Generada por IA");
+          setGeneratedContent(parsed);
+          setActiveTab('manual'); // Switch back to manual to review/save
+          alert("¡Contenido generado! Revisa el título y guarda la actividad.");
+        } catch (e) {
+          console.error("Error parsing JSON", e);
+          alert("La IA generó texto pero no era JSON válido. Intenta ser más específico.");
+        }
+      }
+    } catch (error: any) {
+      console.error("AI Error:", error);
+      alert(`Error al generar con IA: ${error.message}`);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const saveApiKey = (key: string) => {
+    setAiApiKey(key);
+    localStorage.setItem('gemini_api_key', key);
+    setShowApiKeyInput(false);
+  };
 
   // Initial Data Load
   useEffect(() => {
@@ -109,7 +190,10 @@ export default function Calificaciones() {
         nombre: newEvaName,
         porcentaje: newEvaPercent,
         esGrupal: newEvaIsGroup,
-        fecha: newEvaDate ? new Date(newEvaDate) : undefined
+        fecha: newEvaDate ? new Date(newEvaDate) : undefined,
+        contenido: generatedContent,
+        instruccionesAi: aiPrompt,
+        tipoGeneracion: generatedContent ? 'ia' : 'manual'
       });
 
       setIsDialogOpen(false);
@@ -290,43 +374,127 @@ export default function Calificaciones() {
                           Define el nombre y porcentaje de la actividad.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="name" className="text-right">Nombre</Label>
-                          <Input id="name" value={newEvaName} onChange={e => setNewEvaName(e.target.value)} className="col-span-3" placeholder="Ej: Quiz 1" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="percent" className="text-right">Porcentaje</Label>
-                          <div className="col-span-3 flex items-center gap-2">
-                            <Input
-                              id="percent"
-                              type="number"
-                              max={remainingPercentage}
-                              value={newEvaPercent}
-                              onChange={e => setNewEvaPercent(parseFloat(e.target.value))}
-                            />
-                            <span className="text-sm text-muted-foreground">%</span>
+
+
+                      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="manual">Manual</TabsTrigger>
+                          <TabsTrigger value="ai" className="gap-2"><Sparkles className="w-3 h-3 text-purple-500" /> Asistente IA</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="manual" className="space-y-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">Nombre</Label>
+                            <Input id="name" value={newEvaName} onChange={e => setNewEvaName(e.target.value)} className="col-span-3" placeholder="Ej: Quiz 1" />
                           </div>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="date" className="text-right">Fecha</Label>
-                          <div className="col-span-3 flex items-center gap-2">
-                            <Input
-                              id="date"
-                              type="date"
-                              value={newEvaDate}
-                              onChange={e => setNewEvaDate(e.target.value)}
-                            />
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="percent" className="text-right">Porcentaje</Label>
+                            <div className="col-span-3 flex items-center gap-2">
+                              <Input
+                                id="percent"
+                                type="number"
+                                max={remainingPercentage}
+                                value={newEvaPercent}
+                                onChange={e => setNewEvaPercent(parseFloat(e.target.value))}
+                              />
+                              <span className="text-sm text-muted-foreground">%</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="isGroup" className="text-right">Grupal</Label>
-                          <div className="flex items-center space-x-2 col-span-3">
-                            <Switch id="isGroup" checked={newEvaIsGroup} onCheckedChange={setNewEvaIsGroup} />
-                            <span className="text-sm text-muted-foreground">Esta actividad se califica por grupos</span>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="date" className="text-right">Fecha</Label>
+                            <div className="col-span-3 flex items-center gap-2">
+                              <Input
+                                id="date"
+                                type="date"
+                                value={newEvaDate}
+                                onChange={e => setNewEvaDate(e.target.value)}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="isGroup" className="text-right">Grupal</Label>
+                            <div className="flex items-center space-x-2 col-span-3">
+                              <Switch id="isGroup" checked={newEvaIsGroup} onCheckedChange={setNewEvaIsGroup} />
+                              <span className="text-sm text-muted-foreground">Esta actividad se califica por grupos</span>
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="ai" className="space-y-4 py-4">
+                          {!aiApiKey ? (
+                            <div className="text-center p-6 border-2 border-dashed rounded-lg bg-slate-50">
+                              <Brain className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                              <h3 className="font-semibold text-slate-700">Configura tu IA</h3>
+                              <p className="text-sm text-muted-foreground mb-4">Necesitas una API Key de Google Gemini para usar esta función.</p>
+                              <Button variant="outline" onClick={() => setShowApiKeyInput(true)}>
+                                <Settings className="w-4 h-4 mr-2" /> Configurar API Key
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center text-sm">
+                                <Label>Instrucciones</Label>
+                                <Button variant="ghost" size="sm" onClick={() => setShowApiKeyInput(true)} className="h-6 px-2 text-xs">
+                                  <Settings className="w-3 h-3 mr-1" /> Cambiar Key
+                                </Button>
+                              </div>
+                              <Textarea
+                                placeholder="Ej: Genera un quiz de 5 preguntas sobre React Hooks básicos (useState, useEffect) con opciones múltiples."
+                                className="min-h-[120px]"
+                                value={aiPrompt}
+                                onChange={(e) => setAiPrompt(e.target.value)}
+                              />
+                              <div className="text-xs text-muted-foreground bg-purple-50 text-purple-700 p-2 rounded flex gap-2">
+                                <Sparkles className="w-4 h-4 shrink-0" />
+                                <span>La IA generará el título, descripción y preguntas automáticamente. Luego podrás revisar y guardar.</span>
+                              </div>
+                              <Button
+                                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                                onClick={handleGenerateAI}
+                                disabled={aiGenerating || !aiPrompt.trim()}
+                              >
+                                {aiGenerating ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Brain className="w-4 h-4 mr-2" /> Generar Quiz
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </TabsContent>
+                      </Tabs>
+
+                      {/* API Key Dialog */}
+                      <Dialog open={showApiKeyInput} onOpenChange={setShowApiKeyInput}>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Configurar Gemini API</DialogTitle>
+                            <DialogDescription>
+                              Ingresa tu API Key de Google Gemini (AI Studio). Se guardará localmente en tu navegador.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid items-center gap-4">
+                              <Input
+                                type="password"
+                                placeholder="AIzaVy..."
+                                value={aiApiKey}
+                                onChange={(e) => setAiApiKey(e.target.value)}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Puedes obtenerla gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline text-blue-600">Google AI Studio</a>.
+                              </p>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button onClick={() => saveApiKey(aiApiKey)}>Guardar Key</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                         <Button onClick={handleCreateEvaluacion}>Crear Actividad</Button>
@@ -541,7 +709,8 @@ export default function Calificaciones() {
             </TabsContent>
           </Tabs>
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

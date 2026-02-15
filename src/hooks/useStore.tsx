@@ -894,7 +894,10 @@ export function useCalificaciones() {
           porcentaje: e.porcentaje,
           esGrupal: e.es_grupal,
           fecha: e.fecha ? new Date(e.fecha) : undefined,
-          createdAt: new Date(e.created_at)
+          createdAt: new Date(e.created_at),
+          contenido: e.contenido,
+          instruccionesAi: e.instrucciones_ai,
+          tipoGeneracion: e.tipo_generacion
         }));
         dispatch({ type: 'SET_EVALUACIONES', payload: evaluaciones });
 
@@ -947,7 +950,10 @@ export function useCalificaciones() {
         nombre: eva.nombre,
         porcentaje: eva.porcentaje,
         es_grupal: eva.esGrupal,
-        fecha: eva.fecha ? format(eva.fecha, 'yyyy-MM-dd') : null
+        fecha: eva.fecha ? format(eva.fecha, 'yyyy-MM-dd') : null,
+        contenido: eva.contenido,
+        instrucciones_ai: eva.instruccionesAi,
+        tipo_generacion: eva.tipoGeneracion
       };
 
       const { data, error } = await supabase
@@ -967,10 +973,13 @@ export function useCalificaciones() {
           porcentaje: data.porcentaje,
           esGrupal: data.es_grupal,
           fecha: data.fecha ? new Date(data.fecha) : undefined,
-          createdAt: new Date(data.created_at)
+          createdAt: new Date(data.created_at),
+          contenido: data.contenido,
+          instruccionesAi: data.instrucciones_ai,
+          tipoGeneracion: data.tipo_generacion
         };
         dispatch({ type: 'ADD_EVALUACION', payload: newEva });
-        dispatch({ type: 'SET_TOAST', payload: { message: 'Actividad creada', type: 'success' } });
+        dispatch({ type: 'SET_TOAST', payload: { message: 'Actividad creada exitosamente', type: 'success' } });
         return newEva;
       }
     } catch (error: any) {
