@@ -617,6 +617,49 @@ export function Estudiantes() {
                     </label>
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-200">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Programa</label>
+                    <Select
+                      value={estudianteSeleccionado.programa}
+                      onValueChange={(val: any) => {
+                        const updated = { ...estudianteSeleccionado, programa: val };
+                        setEstudianteSeleccionado(updated);
+                        updateEstudiante(updated);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Seleccionar..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {programas.map(prog => (
+                          <SelectItem key={prog} value={prog}>{prog}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Semestre</label>
+                    <Select
+                      value={String(estudianteSeleccionado.semestre || 1)}
+                      onValueChange={(val) => {
+                        const updated = { ...estudianteSeleccionado, semestre: parseInt(val) };
+                        setEstudianteSeleccionado(updated);
+                        updateEstudiante(updated);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="#" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(s => (
+                          <SelectItem key={s} value={String(s)}>{s}° Semestre</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 mt-6">

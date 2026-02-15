@@ -570,6 +570,8 @@ export function useCursos() {
         .update({
           es_homologante: estudiante.esHomologante,
           ha_visto_clase_antes: estudiante.haVistoClaseAntes,
+          programa: estudiante.programa,
+          semestre: estudiante.semestre,
           // Map other fields if needed
         })
         .eq('id', estudiante.id); // Assuming estudiante.id maps to usuarios.id (which it should for students)
