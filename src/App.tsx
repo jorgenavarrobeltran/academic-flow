@@ -19,6 +19,7 @@ import EarlyWarning from './components/risk/EarlyWarning';
 import Rubricas from './components/rubricas/Rubricas';
 import Evaluaciones from './components/evaluaciones/Evaluaciones';
 import Portafolio from './components/portafolio/Portafolio';
+import PublicRegistration from './components/public/PublicRegistration';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/register/:cursoId" element={<PublicRegistration />} />
 
         {/* Protected Routes */}
         <Route path="/" element={<Layout />}>

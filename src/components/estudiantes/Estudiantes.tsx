@@ -27,7 +27,9 @@ import {
   ChevronDown,
   Edit2,
   Upload,
-  FileSpreadsheet
+
+  FileSpreadsheet,
+  Link
 } from 'lucide-react';
 import { calcularPorcentajeAsistencia } from '@/data/mockData';
 import type { Estudiante, Programa, Calificacion } from '@/types';
@@ -277,6 +279,20 @@ export function Estudiantes() {
             <Users className="w-4 h-4 mr-2" />
             Agregar Estudiante
           </Button>
+          {cursoSeleccionado && (
+            <Button
+              variant="outline"
+              className="ml-2 border-dashed border-[#0070a0] text-[#0070a0] hover:bg-blue-50"
+              onClick={() => {
+                const url = `${window.location.origin}/register/${cursoSeleccionado.id}`;
+                navigator.clipboard.writeText(url);
+                showToast('Enlace copiado al portapapeles', 'success');
+              }}
+            >
+              <Link className="w-4 h-4 mr-2" />
+              Copiar Enlace de Registro
+            </Button>
+          )}
         </div>
       </div>
 
