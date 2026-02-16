@@ -185,67 +185,72 @@ function LoginForm({ role, isLoading, onSubmit }: { role: string, isLoading: boo
     };
 
     return (
-        <Card className="border-0 shadow-none">
-            <CardHeader className="px-0">
-                <CardTitle>Ingreso {role === 'docente' ? 'Docente' : 'Estudiante'}</CardTitle>
-                <CardDescription>
-                    Ingresa tus credenciales institucionales para continuar.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="px-0 space-y-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor={`email-${role}`}>Correo Institucional</Label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id={`email-${role}`}
-                                placeholder="usuario@cul.edu.co"
-                                className="pl-9"
-                                type="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
+        <>
+            <Card className="border-0 shadow-none">
+                <CardHeader className="px-0">
+                    <CardTitle>Ingreso {role === 'docente' ? 'Docente' : 'Estudiante'}</CardTitle>
+                    <CardDescription>
+                        Ingresa tus credenciales institucionales para continuar.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor={`email-${role}`}>Correo Institucional</Label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id={`email-${role}`}
+                                    placeholder="usuario@cul.edu.co"
+                                    className="pl-9"
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor={`password-${role}`}>Contraseña</Label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id={`password-${role}`}
-                                type="password"
-                                className="pl-9"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
+                        <div className="space-y-2">
+                            <Label htmlFor={`password-${role}`}>Contraseña</Label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id={`password-${role}`}
+                                    type="password"
+                                    className="pl-9"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center space-x-2">
-                        <Checkbox id={`remember-${role}`} />
-                        <Label htmlFor={`remember-${role}`} className="text-sm font-normal">Recordar dispositivo</Label>
-                    </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id={`remember-${role}`} />
+                            <Label htmlFor={`remember-${role}`} className="text-sm font-normal">Recordar dispositivo</Label>
+                        </div>
 
-                    <Button type="submit" className="w-full text-md py-5" disabled={isLoading}>
-                        {isLoading ? (
-                            <span className="flex items-center">
-                                <span className="h-4 w-4 border-2 border-white/50 border-t-white rounded-full animate-spin mr-2" />
-                                Ingresando...
-                            </span>
-                        ) : (
-                            <>
-                                Iniciar Sesión <ArrowRight className="ml-2 h-4 w-4" />
-                            </>
-                        )}
+                        <Button type="submit" className="w-full text-md py-5" disabled={isLoading}>
+                            {isLoading ? (
+                                <span className="flex items-center">
+                                    <span className="h-4 w-4 border-2 border-white/50 border-t-white rounded-full animate-spin mr-2" />
+                                    Ingresando...
+                                </span>
+                            ) : (
+                                <>
+                                    Iniciar Sesión <ArrowRight className="ml-2 h-4 w-4" />
+                                </>
+                            )}
 
-                    </Button>
+                        </Button>
 
 
-                </form>
-            </CardContent>
-        </Card>
+                    </form>
+                </CardContent>
+            </Card>
+            <div className="mt-4 text-center text-[10px] text-slate-400">
+                v 2026.02.15.v2
+            </div>
+        </>
     );
 }
