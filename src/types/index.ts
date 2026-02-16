@@ -71,6 +71,7 @@ export interface Curso {
   programa?: string; // Ej: "Ingeniería Industrial"
   activo: boolean;
   archivado: boolean;
+  configuracion_grupos?: { min: number; max: number };
 }
 
 export interface EstudianteCurso {
@@ -85,6 +86,7 @@ export interface EstudianteCurso {
   email?: string;
   codigo?: string;
   fotoUrl?: string;
+  programa?: string;
 }
 
 export interface ConfiguracionNotas {

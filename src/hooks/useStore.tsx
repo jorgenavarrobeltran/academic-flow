@@ -11,17 +11,10 @@ import type {
   NotaActividad,
   EventoCalendario,
   RecursoEducativo,
-  Convocatoria
+  Convocatoria,
+  Grupo
 } from '@/types';
-import {
-  alertasMock,
-  asistenciasMock,
-  eventosMock,
-  recursosMock,
-  convocatoriasMock,
-  cursosMock,
-  estudiantesMock
-} from '@/data/mockData';
+
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 
@@ -44,6 +37,7 @@ interface AppState {
   // Evaluaciones detalladas
   evaluaciones: Evaluacion[];
   notasActividades: NotaActividad[];
+  grupos: Grupo[];
 
   // UI State
   sidebarOpen: boolean;
@@ -62,14 +56,15 @@ const initialState: AppState = {
   isAuthenticated: false,
   cursos: [],
   cursoSeleccionado: null,
-  alertas: alertasMock,
-  asistencias: asistenciasMock,
-  notas: [], // Empty initially to avoid type mismatch with old mocks
-  eventos: eventosMock,
-  recursos: recursosMock,
-  convocatorias: convocatoriasMock,
+  alertas: [],
+  asistencias: [],
+  notas: [],
+  eventos: [],
+  recursos: [],
+  convocatorias: [],
   evaluaciones: [],
   notasActividades: [],
+  grupos: [],
   sidebarOpen: true,
   activeTab: 'dashboard',
   modalOpen: null,
@@ -111,7 +106,11 @@ type Action =
   | { type: 'SET_FILTRO_SEMESTRE'; payload: string }
   | { type: 'SET_FILTRO_ASIGNATURA'; payload: string }
   | { type: 'SET_ESTUDIANTES_CURSO'; payload: { cursoId: string; estudiantes: any[] } }
-  | { type: 'SET_FILTRO_BUSQUEDA'; payload: string };
+  | { type: 'SET_FILTRO_BUSQUEDA'; payload: string }
+  | { type: 'SET_GRUPOS'; payload: Grupo[] }
+  | { type: 'ADD_GRUPO'; payload: Grupo }
+  | { type: 'UPDATE_GRUPO'; payload: Grupo }
+  | { type: 'DELETE_GRUPO'; payload: string };
 
 // Reducer
 function appReducer(state: AppState, action: Action): AppState {
@@ -244,6 +243,20 @@ function appReducer(state: AppState, action: Action): AppState {
       return { ...state, filtroAsignatura: action.payload };
     case 'SET_FILTRO_BUSQUEDA':
       return { ...state, filtroBusqueda: action.payload };
+    case 'SET_GRUPOS':
+      return { ...state, grupos: action.payload };
+    case 'ADD_GRUPO':
+      return { ...state, grupos: [...state.grupos, action.payload] };
+    case 'UPDATE_GRUPO':
+      return {
+        ...state,
+        grupos: state.grupos.map(g => g.id === action.payload.id ? action.payload : g)
+      };
+    case 'DELETE_GRUPO':
+      return {
+        ...state,
+        grupos: state.grupos.filter(g => g.id !== action.payload)
+      };
     default:
       return state;
   }
@@ -277,24 +290,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           .from('cursos')
           .select(`
             *,
-            inscripciones (
-              estudiante_id,
-              created_at
-            )
+        inscripciones (
+          estudiante_id,
+          created_at,
+          usuarios (
+            nombre,
+            apellido,
+            email,
+            codigo,
+            foto_url,
+            programa
+          )
+        )
           `)
           .eq('activo', true);
 
         if (error) {
           console.error('Error fetching cursos:', error);
-          // Fallback a mocks si falla Supabase - FILTRAR SEGUN ROL
-          console.warn('Usando datos mock como fallback');
-          let cursosFallback = cursosMock;
-          if (state.usuario?.rol === 'estudiante') {
-            cursosFallback = cursosMock.filter(c =>
-              c.estudiantes?.some(e => e.estudianteId === state.usuario?.id)
-            );
-          }
-          dispatch({ type: 'SET_CURSOS', payload: cursosFallback });
+          // NO Fallback a mocks. Mostrar error.
+          dispatch({
+            type: 'SET_TOAST',
+            payload: { message: 'Error cargando cursos', type: 'error' }
+          });
           return;
         }
 
@@ -324,7 +341,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               estudianteId: i.estudiante_id,
               fechaInscripcion: new Date(i.created_at),
               asistencias: [],
-              notas: []
+              notas: [],
+              nombre: i.usuarios?.nombre,
+              apellido: i.usuarios?.apellido,
+              email: i.usuarios?.email,
+              codigo: i.usuarios?.codigo,
+              fotoUrl: i.usuarios?.foto_url,
+              programa: i.usuarios?.programa
             })) : [],
             configuracionNotas: c.configuracion_notas || {
               cortes: [
@@ -337,26 +360,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }));
           dispatch({ type: 'SET_CURSOS', payload: cursosFormateados });
         } else {
-          // Sin cursos en la DB, usar mocks filtrados
-          console.warn('No hay cursos en la base de datos, usando datos mock');
-          let cursosFallback = cursosMock;
-          if (state.usuario?.rol === 'estudiante') {
-            cursosFallback = cursosMock.filter(c =>
-              c.estudiantes?.some(e => e.estudianteId === state.usuario?.id)
-            );
-          }
-          dispatch({ type: 'SET_CURSOS', payload: cursosFallback });
+          // Sin cursos en la DB
+          console.log('No se encontraron cursos en la base de datos.');
+          dispatch({ type: 'SET_CURSOS', payload: [] });
         }
       } catch (err) {
         console.error('System error fetching cursos:', err);
-        // Fallback a mocks en caso de error de sistema
-        let cursosFallback = cursosMock;
-        if (state.usuario?.rol === 'estudiante') {
-          cursosFallback = cursosMock.filter(c =>
-            c.estudiantes?.some(e => e.estudianteId === state.usuario?.id)
-          );
-        }
-        dispatch({ type: 'SET_CURSOS', payload: cursosFallback });
+        dispatch({
+          type: 'SET_TOAST',
+          payload: { message: 'Error de sistema al cargar cursos', type: 'error' }
+        });
       }
     };
 
@@ -555,11 +568,13 @@ export function useCursos() {
       }
     } catch (error: any) {
       console.error('Error fetching estudiantes:', error);
-      // Fallback a mocks
+      // Fallback: NO usar mocks, dejar vacío o estado anterior
+      // Mostrar error al usuario
       dispatch({
-        type: 'SET_ESTUDIANTES_CURSO',
-        payload: { cursoId, estudiantes: estudiantesMock }
+        type: 'SET_TOAST',
+        payload: { message: 'Error cargando estudiantes', type: 'error' }
       });
+      // No sobrescribir con mocks. Si falló, falló.
     }
   }, [dispatch]);
 
@@ -616,6 +631,84 @@ export function useCursos() {
       return false;
     }
   }, [dispatch]);
+
+  const fetchCursos = useCallback(async () => {
+    if (!state.usuario?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('cursos')
+        .select(`
+          *,
+          inscripciones (
+            estudiante_id,
+            created_at,
+            usuarios (
+              id,
+              nombre,
+              apellido,
+              email,
+              codigo,
+              foto_url,
+              programa
+            )
+          )
+        `)
+        .eq('activo', true);
+
+      if (error) {
+        console.error('Error fetching cursos:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        let cursosData = data;
+        if (state.usuario?.rol === 'estudiante') {
+          cursosData = data.filter((c: any) =>
+            c.inscripciones.some((i: any) => i.estudiante_id === state.usuario?.id)
+          );
+        }
+
+        const cursosFormateados = cursosData.map((c: any) => ({
+          ...c,
+          fechaInicio: new Date(c.fecha_inicio || c.created_at),
+          fechaFin: new Date(c.fecha_fin || c.created_at),
+          asignatura: c.asignatura || 'Sin Asignatura',
+          semestre: c.semestre || '2026-1',
+          grupo: c.grupo || 'A',
+          diasClase: c.dias_clase || [1, 3],
+          horaInicio: c.hora_inicio || '08:00',
+          horaFin: c.hora_fin || '10:00',
+          estudiantes: c.inscripciones ? c.inscripciones.map((i: any) => ({
+            estudianteId: i.estudiante_id,
+            fechaInscripcion: new Date(i.created_at),
+            asistencias: [],
+            notas: [],
+            nombre: i.usuarios?.nombre,
+            apellido: i.usuarios?.apellido,
+            email: i.usuarios?.email,
+            codigo: i.usuarios?.codigo,
+            fotoUrl: i.usuarios?.foto_url,
+            programa: i.usuarios?.programa
+          })) : [],
+          configuracionNotas: c.configuracion_notas || {
+            cortes: [
+              { numero: 1, porcentaje: 30, fechaInicio: new Date(), fechaFin: new Date(), cerrado: false },
+              { numero: 2, porcentaje: 30, fechaInicio: new Date(), fechaFin: new Date(), cerrado: false },
+              { numero: 3, porcentaje: 40, fechaInicio: new Date(), fechaFin: new Date(), cerrado: false },
+            ],
+            componentes: []
+          }
+        }));
+        dispatch({ type: 'SET_CURSOS', payload: cursosFormateados });
+      } else {
+        dispatch({ type: 'SET_CURSOS', payload: [] });
+      }
+    } catch (err) {
+      console.error('System error fetching cursos:', err);
+    }
+  }, [dispatch, state.usuario?.id, state.usuario?.rol]);
+
   return {
     cursos: state.cursos,
     cursoSeleccionado: state.cursoSeleccionado,
@@ -626,7 +719,8 @@ export function useCursos() {
     moverEstudianteEntreCursos,
     fetchEstudiantesPorCurso,
     updateEstudiante,
-    uploadWhitelist
+    uploadWhitelist,
+    fetchCursos
   };
 }
 
@@ -688,10 +782,8 @@ export function useAsistencias() {
         dispatch({ type: 'SET_ASISTENCIAS', payload: asistencias });
       }
     } catch (error: any) {
-
       console.error('Error fetching asistencias:', error);
-      // Fallback
-      dispatch({ type: 'SET_ASISTENCIAS', payload: asistenciasMock });
+      dispatch({ type: 'SET_TOAST', payload: { message: 'Error cargando asistencias', type: 'error' } });
     }
   }, [dispatch]);
 
@@ -761,25 +853,10 @@ export function useAsistencias() {
         dispatch({ type: 'SET_ASISTENCIAS', payload: currentAsistencias });
         dispatch({ type: 'SET_TOAST', payload: { message: 'Asistencia guardada', type: 'success' } });
       }
+
     } catch (error: any) {
       console.error('Error saving asistencia:', error);
       dispatch({ type: 'SET_TOAST', payload: { message: `Error al guardar: ${error.message}`, type: 'error' } });
-
-      // Fallback for Demo if DB fails
-      if (state.usuario?.id === 'docente-demo') {
-        const currentAsistencias = [...state.asistencias];
-        nuevasAsistencias.forEach(s => {
-          const idx = currentAsistencias.findIndex(ca => ca.id === s.id || (ca.estudianteId === s.estudianteId && format(new Date(ca.fecha), 'yyyy-MM-dd') === format(new Date(s.fecha), 'yyyy-MM-dd')));
-          if (idx >= 0) {
-            currentAsistencias[idx] = s;
-          } else {
-            currentAsistencias.push({ ...s, id: s.id.startsWith('asis-') ? `mock-${Date.now()}` : s.id });
-          }
-        });
-        dispatch({ type: 'SET_ASISTENCIAS', payload: currentAsistencias });
-        dispatch({ type: 'SET_TOAST', payload: { message: 'Asistencia guardada (Local)', type: 'info' } });
-      }
-
     }
   }, [dispatch, state.asistencias]);
 
@@ -867,14 +944,7 @@ export function useCalificaciones() {
 
   // --- Logic for Granular Evaluations ---
 
-  const isDemoUser = state.usuario?.id === 'docente-demo' || state.usuario?.id === 'estudiante-demo';
-
   const fetchEvaluaciones = useCallback(async (cursoId: string) => {
-    if (isDemoUser) {
-      // In demo mode, evaluaciones are managed in-memory only
-      // Don't clear existing evaluaciones on fetch - they live in state
-      return;
-    }
     try {
       // Fetch definitions
       const { data: evas, error: errEva } = await supabase
@@ -928,21 +998,9 @@ export function useCalificaciones() {
       console.error('Error fetching evaluaciones:', error);
       // Fallback or silent fail if table doesn't exist yet
     }
-  }, [dispatch, isDemoUser]);
+  }, [dispatch]);
 
   const addEvaluacion = useCallback(async (eva: Evaluacion) => {
-    // Demo mode: create evaluation locally without Supabase
-    if (isDemoUser) {
-      const newEva: Evaluacion = {
-        ...eva,
-        id: crypto.randomUUID(),
-        createdAt: new Date()
-      };
-      dispatch({ type: 'ADD_EVALUACION', payload: newEva });
-      dispatch({ type: 'SET_TOAST', payload: { message: 'Actividad creada (demo)', type: 'success' } });
-      return newEva;
-    }
-
     try {
       const dbPayload = {
         curso_id: eva.cursoId,
@@ -987,16 +1045,9 @@ export function useCalificaciones() {
       dispatch({ type: 'SET_TOAST', payload: { message: 'Error al crear actividad: ' + error.message, type: 'error' } });
       throw error;
     }
-  }, [dispatch, isDemoUser]);
+  }, [dispatch]);
 
   const deleteEvaluacion = useCallback(async (id: string) => {
-    // Demo mode: delete locally
-    if (isDemoUser) {
-      dispatch({ type: 'DELETE_EVALUACION', payload: id });
-      dispatch({ type: 'SET_TOAST', payload: { message: 'Actividad eliminada (demo)', type: 'success' } });
-      return;
-    }
-
     try {
       const { error } = await supabase.from('evaluaciones').delete().eq('id', id);
       if (error) throw error;
@@ -1006,20 +1057,9 @@ export function useCalificaciones() {
       console.error('Error deleting evaluacion', error);
       dispatch({ type: 'SET_TOAST', payload: { message: 'Error eliminar', type: 'error' } });
     }
-  }, [dispatch, isDemoUser]);
+  }, [dispatch]);
 
   const saveNotaActividad = useCallback(async (nota: NotaActividad) => {
-    // Demo mode: save grade locally
-    if (isDemoUser) {
-      const saved: NotaActividad = {
-        ...nota,
-        id: nota.id.startsWith('temp-') ? crypto.randomUUID() : nota.id,
-        updatedAt: new Date()
-      };
-      dispatch({ type: 'UPDATE_NOTA_ACTIVIDAD', payload: saved });
-      return;
-    }
-
     try {
       const dbPayload = {
         evaluacion_id: nota.evaluacionId,
@@ -1052,7 +1092,7 @@ export function useCalificaciones() {
     } catch (error: any) {
       console.error('Error saving nota actividad', error);
     }
-  }, [dispatch, isDemoUser]);
+  }, [dispatch]);
 
   return {
     calificaciones: state.notas,
@@ -1063,7 +1103,67 @@ export function useCalificaciones() {
     fetchEvaluaciones,
     addEvaluacion,
     deleteEvaluacion,
-    saveNotaActividad
+    saveNotaActividad,
+    grupos: state.grupos,
+    fetchGrupos: useCallback(async (cursoId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('grupos')
+          .select('*')
+          .eq('curso_id', cursoId);
+
+        if (error) throw error;
+
+        if (data) {
+          const grupos: Grupo[] = data.map((g: any) => ({
+            id: g.id,
+            cursoId: g.curso_id,
+            nombre: g.nombre,
+            integrantes: g.integrantes || [], // JSON array of student IDs
+            fechaCreacion: new Date(g.created_at)
+          }));
+          dispatch({ type: 'SET_GRUPOS', payload: grupos });
+        }
+      } catch (error: any) {
+        console.error("Error fetching grupos:", error);
+      }
+    }, [dispatch]),
+    addGroup: useCallback(async (grupo: Grupo) => {
+      try {
+        const dbPayload = {
+          curso_id: grupo.cursoId,
+          nombre: grupo.nombre,
+          integrantes: grupo.integrantes, // Supabase handles array casting if col is text[] or jsonb
+          created_at: new Date()
+        };
+
+        // Note: If 'integrantes' column is JSONB, better pass as is. If TEXT[], also JS array works.
+
+        const { data, error } = await supabase
+          .from('grupos')
+          .insert(dbPayload)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          const newGroup: Grupo = {
+            id: data.id,
+            cursoId: data.curso_id,
+            nombre: data.nombre,
+            integrantes: data.integrantes,
+            fechaCreacion: new Date(data.created_at)
+          };
+          dispatch({ type: 'ADD_GRUPO', payload: newGroup });
+          return newGroup;
+        }
+      } catch (error: any) {
+        console.error("Error adding group:", error);
+        throw error;
+      }
+    }, [dispatch]),
+    // updateGroup, deleteGroup could be added similarly
   };
 }
 

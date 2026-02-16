@@ -1,15 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCursos, useAsistencias, useAuth } from '@/hooks/useStore';
 import {
-    Calendar,
     CheckCircle,
     XCircle,
     Clock,
-    TrendingUp,
     AlertTriangle,
+    TrendingUp,
     Info
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -19,7 +18,7 @@ import {
     calcularTotalClasesSemestre,
     calcularClasesPasadas,
     REGLAMENTO_CUL
-} from '@/data/mockData';
+} from '@/utils/academicUtils';
 
 export function StudentAsistencia() {
     const { cursos, cursoSeleccionado, setCursoSeleccionado } = useCursos();

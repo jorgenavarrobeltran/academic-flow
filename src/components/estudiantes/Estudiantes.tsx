@@ -9,8 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useStore, useCursos, useUI, useAuth } from '@/hooks/useStore';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Users,
   Search,
@@ -21,18 +19,15 @@ import {
   CheckCircle,
   Eye,
   FileText,
-  Download,
   ArrowRightLeft,
   BookOpen,
   ChevronDown,
   Edit2,
-  Upload,
-
-  FileSpreadsheet,
   Link
 } from 'lucide-react';
-import { calcularPorcentajeAsistencia } from '@/data/mockData';
+import { calcularPorcentajeAsistencia } from '@/utils/academicUtils';
 import type { Estudiante, Programa, Calificacion } from '@/types';
+import { ImportarEstudiantes } from '@/components/cursos/ImportarEstudiantes';
 
 const calcularPromedioGeneral = (calificaciones: Calificacion[]) => {
   if (!calificaciones.length) return 0;
@@ -53,7 +48,7 @@ const programas: Programa[] = [
 
 export function Estudiantes() {
   const { state } = useStore();
-  const { cursos, cursoSeleccionado, setCursoSeleccionado, moverEstudianteEntreCursos, fetchEstudiantesPorCurso, updateEstudiante, uploadWhitelist } = useCursos();
+  const { cursos, cursoSeleccionado, setCursoSeleccionado, moverEstudianteEntreCursos, fetchEstudiantesPorCurso, updateEstudiante } = useCursos();
   const { showToast } = useUI();
   const { usuario } = useAuth();
 
@@ -72,9 +67,7 @@ export function Estudiantes() {
   const [cursoDestinoSeleccionado, setCursoDestinoSeleccionado] = useState<string>('');
   const [selectorCursoOpen, setSelectorCursoOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [importLoading, setImportLoading] = useState(false);
+
 
   // Cerrar selector al hacer clic fuera
   useEffect(() => {
@@ -271,14 +264,11 @@ export function Estudiantes() {
             )}
           </div>
 
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Cargar Lista
-          </Button>
-          <Button className="bg-[#0070a0] hover:bg-[#00577c]">
-            <Users className="w-4 h-4 mr-2" />
-            Agregar Estudiante
-          </Button>
+
+          <ImportarEstudiantes
+            preselectedCursoId={cursoSeleccionado?.id}
+            onImportSuccess={() => fetchEstudiantesPorCurso(cursoSeleccionado.id)}
+          />
           {cursoSeleccionado && (
             <Button
               variant="outline"
@@ -819,63 +809,11 @@ export function Estudiantes() {
                   Confirmar Cambio
                 </Button>
               </div>
-            </DialogContent>
-          </Dialog>
-
-      {/* Diálogo de Importación de Lista */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-green-600" />
-              Cargar Lista de Estudiantes
-            </DialogTitle>
-            <DialogDescription>
-              Pega aquí la lista de nombres de tus estudiantes (uno por línea).
-              Esto permitirá que se registren en el curso.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="bg-blue-50 p-3 rounded-md text-sm text-blue-700 border border-blue-100">
-              <strong>Curso destino:</strong> {cursoSeleccionado?.nombre}
             </div>
-            <Textarea
-              placeholder="Ejemplo:
-Juan Pérez
-Maria Rodriguez
-Carlos Sanchez"
-              className="min-h-[200px] font-mono text-sm"
-              value={importText}
-              onChange={(e) => setImportText(e.target.value)}
-            />
-            <p className="text-xs text-slate-500">
-              Total detectados: {importText.split('\n').filter(line => line.trim().length > 0).length} estudiantes
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>Cancelar</Button>
-            <Button
-              className="bg-[#0070a0] hover:bg-[#00577c]"
-              disabled={importLoading || importText.trim().length === 0}
-              onClick={async () => {
-                if (!cursoSeleccionado) return;
-                setImportLoading(true);
-                const names = importText.split('\n').filter(line => line.trim().length > 0);
-                const success = await uploadWhitelist(cursoSeleccionado.id, names);
-                setImportLoading(false);
-                if (success) {
-                  setImportDialogOpen(false);
-                  setImportText('');
-                }
-              }}
-            >
-              {importLoading ? 'Cargando...' : 'Cargar Lista'}
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
+
     </div>
   )
 }

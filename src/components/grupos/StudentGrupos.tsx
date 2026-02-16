@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useCursos, useUI, useAuth } from '@/hooks/useStore';
+import { useCursos, useUI, useAuth, useCalificaciones } from '@/hooks/useStore';
 import {
     Users,
     FolderOpen,
@@ -14,10 +14,8 @@ import {
     CheckCircle2,
     PlayCircle
 } from 'lucide-react';
-import { estudiantesMock, gruposMock } from '@/data/mockData';
 import type { Estudiante } from '@/types';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+
 import {
     Dialog,
     DialogContent,
@@ -34,41 +32,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-interface GrupoHistorial {
-    id: string;
-    accion: 'creacion' | 'unirse' | 'salir' | 'modificacion';
-    descripcion: string;
-    fecha: Date;
-    usuario: string;
-}
-
-const mockHistorial: GrupoHistorial[] = [
-    {
-        id: 'h1',
-        accion: 'creacion',
-        descripcion: 'Grupo creado',
-        fecha: new Date(2026, 1, 10, 14, 30),
-        usuario: 'Ana García'
-    },
-    {
-        id: 'h2',
-        accion: 'unirse',
-        descripcion: 'Juan Pérez se unió al grupo',
-        fecha: new Date(2026, 1, 10, 14, 35),
-        usuario: 'Juan Pérez'
-    },
-    {
-        id: 'h3',
-        accion: 'modificacion',
-        descripcion: 'Se asignó el proyecto "IA en Salud"',
-        fecha: new Date(2026, 1, 12, 10, 0),
-        usuario: 'Ana García'
-    }
-];
-
 export function StudentGrupos() {
     const { usuario } = useAuth();
     const { cursos, cursoSeleccionado, setCursoSeleccionado } = useCursos();
+    const { grupos, fetchGrupos } = useCalificaciones();
     const { showToast } = useUI();
 
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -79,17 +46,23 @@ export function StudentGrupos() {
         integrantesSeleccionados: [] as string[]
     });
 
+    useEffect(() => {
+        if (cursoSeleccionado?.id) {
+            fetchGrupos(cursoSeleccionado.id);
+        }
+    }, [cursoSeleccionado?.id, fetchGrupos]);
+
     const miGrupo = useMemo(() => {
         if (!cursoSeleccionado || !usuario) return null;
-        return gruposMock.find(g =>
+        return grupos.find(g =>
             g.cursoId === cursoSeleccionado.id && g.integrantes.includes(usuario.id)
         );
-    }, [cursoSeleccionado, usuario]);
+    }, [cursoSeleccionado, usuario, grupos]);
 
     const gruposDelCurso = useMemo(() => {
         if (!cursoSeleccionado) return [];
-        return gruposMock.filter(g => g.cursoId === cursoSeleccionado.id);
-    }, [cursoSeleccionado]);
+        return grupos.filter(g => g.cursoId === cursoSeleccionado.id);
+    }, [cursoSeleccionado, grupos]);
 
     const estudiantesDisponibles = useMemo(() => {
         if (!cursoSeleccionado || !usuario) return [];
@@ -100,16 +73,13 @@ export function StudentGrupos() {
         return classmates
             .filter(c => c.estudianteId !== usuario.id)
             .filter(c => !todosEstudiantesEnGrupos.has(c.estudianteId))
-            .map(c => {
-                const mockDetail = estudiantesMock.find(m => m.id === c.estudianteId);
-                return mockDetail || {
-                    id: c.estudianteId,
-                    nombre: c.nombre || 'Estudiante',
-                    apellido: c.apellido || 'Desconocido',
-                    fotoUrl: c.fotoUrl,
-                    email: c.email
-                } as Estudiante;
-            });
+            .map(c => ({
+                id: c.estudianteId,
+                nombre: c.nombre || 'Estudiante',
+                apellido: c.apellido || 'Desconocido',
+                fotoUrl: c.fotoUrl,
+                email: c.email
+            } as Estudiante));
     }, [cursoSeleccionado, gruposDelCurso, usuario]);
 
     const handleCreateGrupo = () => {
@@ -191,7 +161,13 @@ export function StudentGrupos() {
                                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Integrantes</h3>
                                 <div className="space-y-3">
                                     {miGrupo.integrantes.map(integranteId => {
-                                        const est = estudiantesMock.find(e => e.id === integranteId) || { nombre: 'Estudiante', apellido: '', fotoUrl: '', id: integranteId } as Estudiante;
+                                        const estCurso = cursoSeleccionado?.estudiantes?.find(e => e.estudianteId === integranteId);
+                                        const est = estCurso ? {
+                                            id: estCurso.estudianteId,
+                                            nombre: estCurso.nombre || 'Estudiante',
+                                            apellido: estCurso.apellido || '',
+                                            fotoUrl: estCurso.fotoUrl
+                                        } : { nombre: 'Estudiante', apellido: '', fotoUrl: '', id: integranteId } as any;
                                         return (
                                             <div key={integranteId} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
                                                 <Avatar>
@@ -226,26 +202,7 @@ export function StudentGrupos() {
                             </div>
                         </div>
 
-                        {/* Historial de Actividad */}
-                        <div className="mt-8 pt-6 border-t border-slate-100">
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Historial de Actividad</h3>
-                            <div className="space-y-4">
-                                {mockHistorial.map((log) => (
-                                    <div key={log.id} className="flex gap-3 text-sm">
-                                        <div className="flex-none flex flex-col items-center">
-                                            <div className="w-2 h-2 rounded-full bg-slate-300 mt-1.5" />
-                                            <div className="w-px h-full bg-slate-200 mt-1" />
-                                        </div>
-                                        <div className="pb-4">
-                                            <p className="text-slate-900 font-medium">{log.descripcion}</p>
-                                            <p className="text-slate-500 text-xs">
-                                                {format(log.fecha, "d 'de' MMMM, h:mm a", { locale: es })} · Por {log.usuario}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+
                     </CardContent>
                 </Card>
             ) : (

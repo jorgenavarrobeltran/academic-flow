@@ -34,7 +34,6 @@ import {
   BookOpen,
   PiggyBank
 } from 'lucide-react';
-import { convocatoriasMock } from '@/data/mockData';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Convocatoria } from '@/types';
@@ -49,8 +48,6 @@ const categoriaConfig: Record<string, { icon: React.ElementType; color: string; 
   financiacion: { icon: PiggyBank, color: 'text-teal-600', bg: 'bg-teal-50', label: 'Financiación' },
 };
 
-
-
 export function Convocatorias() {
   const { showToast } = useUI();
 
@@ -61,13 +58,8 @@ export function Convocatorias() {
   const [dialogOpen, setDialogOpen] = useState(false); // Detalle Dialog
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false); // Create Dialog
 
-  // Mock initial data handling to avoid hydration errors if needed, but for now just use imported mock
-  // We need to extend the mock data with scope fields if they don't exist
-  const [convocatorias, setConvocatorias] = useState<Convocatoria[]>(convocatoriasMock.map(c => ({
-    ...c,
-    alcance: c.alcance || 'todos',
-    cursosIds: c.cursosIds || []
-  })));
+  // Initial empty state, replace mock data. In future connect to DB.
+  const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
 
   const [currentConvocatoria, setCurrentConvocatoria] = useState<Partial<Convocatoria>>({
     titulo: '',
@@ -135,7 +127,7 @@ export function Convocatorias() {
 
   // Filtrar convocatorias
   const convocatoriasFiltradas = useMemo(() => {
-    return convocatoriasMock.filter(conv => {
+    return convocatorias.filter(conv => {
       const matchSearch =
         conv.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
         conv.entidadConvocante.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -146,7 +138,7 @@ export function Convocatorias() {
 
       return matchSearch && matchCategoria && matchEstado;
     });
-  }, [searchQuery, filtroCategoria, filtroEstado]);
+  }, [convocatorias, searchQuery, filtroCategoria, filtroEstado]);
 
   const handleVerDetalle = (convocatoria: Convocatoria) => {
     setConvocatoriaSeleccionada(convocatoria);

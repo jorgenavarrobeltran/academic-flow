@@ -30,7 +30,12 @@ import {
 } from 'recharts';
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { estudiantesMock, calcularPorcentajeAsistencia, calcularPromedioNotas } from '@/data/mockData';
+// Helper functions (moved from mockData or re-implemented)
+const calcularPorcentajeAsistencia = (asistencias: any[]) => {
+  if (!asistencias || asistencias.length === 0) return 0;
+  const presentes = asistencias.filter(a => a.estado === 'presente' || a.estado === 'tarde').length;
+  return Math.round((presentes / asistencias.length) * 100);
+};
 
 export function Dashboard() {
   const { state } = useStore();
@@ -39,18 +44,26 @@ export function Dashboard() {
   const { showToast } = useUI();
 
   // Calcular estadísticas
-  const totalEstudiantes = estudiantesMock.length;
+  // Obtener estudiantes únicos de todos los cursos
+  const allStudents = cursos.flatMap(c => c.estudiantes || []);
+  const uniqueStudentIds = Array.from(new Set(allStudents.map(s => s.estudianteId)));
+  const totalEstudiantes = uniqueStudentIds.length;
+
   const totalCursos = cursos.length;
   const estudiantesRiesgo = alertasRiesgo.length;
 
-  // Calcular asistencia promedio
-  const asistenciasPorEstudiante = estudiantesMock.map(est => {
-    const asistencias = state.asistencias.filter(a => a.estudianteId === est.id);
+  // Calcular asistencia promedio (Basado en datos cargados en state.asistencias)
+  // Nota: Si no se han cargado asistencias, esto será 0 o inexacto. 
+  // Idealmente se debería hacer fetch de estadísticas globales.
+  const asistenciasPorEstudiante = uniqueStudentIds.map(id => {
+    const asistencias = state.asistencias.filter(a => a.estudianteId === id);
+    if (asistencias.length === 0) return 0;
     return calcularPorcentajeAsistencia(asistencias);
-  });
-  const promedioAsistencia = Math.round(
-    asistenciasPorEstudiante.reduce((a, b) => a + b, 0) / asistenciasPorEstudiante.length
-  );
+  }).filter(p => p > 0); // Filtrar ceros si no hay datos
+
+  const promedioAsistencia = asistenciasPorEstudiante.length > 0
+    ? Math.round(asistenciasPorEstudiante.reduce((a, b) => a + b, 0) / asistenciasPorEstudiante.length)
+    : 0;
 
   // Datos para gráfico de distribución de notas
   const notasData = [
@@ -63,7 +76,7 @@ export function Dashboard() {
   // Datos para gráfico de asistencia por curso
   const asistenciaData = cursos.map(curso => ({
     name: curso.codigo,
-    asistencia: Math.round(Math.random() * 20 + 80), // Simulado
+    asistencia: 0,
   }));
 
   // Próximos eventos
@@ -71,12 +84,30 @@ export function Dashboard() {
     .filter(e => new Date(e.fechaInicio) >= new Date())
     .slice(0, 3);
 
-  // Estudiantes en riesgo
-  const estudiantesEnRiesgo = estudiantesMock.filter(est => {
-    const asistencias = state.asistencias.filter(a => a.estudianteId === est.id);
+  // Estudiantes en riesgo (Calculado dinámicamente)
+  const estudiantesEnRiesgo = uniqueStudentIds.map(id => {
+    // Buscar información del estudiante en algún curso (cualquiera sirve para nombre/foto)
+    const studentInfo = allStudents.find(s => s.estudianteId === id);
+    const asistencias = state.asistencias.filter(a => a.estudianteId === id);
     const porcentaje = calcularPorcentajeAsistencia(asistencias);
-    return porcentaje < 80;
-  }).slice(0, 5);
+
+    // Si no hay datos, asumimos 100% para no alarmar falsamente, o 0% si queremos ser estrictos.
+    // Elijamos ignorar si no hay registros.
+    if (asistencias.length === 0) return null;
+
+    if (porcentaje < 80) {
+      return {
+        id: id,
+        nombre: studentInfo?.nombre || 'Estudiante',
+        apellido: studentInfo?.apellido || '',
+        codigo: studentInfo?.codigo || '---',
+        fotoUrl: studentInfo?.fotoUrl,
+        programa: studentInfo?.programa || '---',
+        porcentajeAsistencia: porcentaje
+      };
+    }
+    return null;
+  }).filter(Boolean).slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -316,11 +347,9 @@ export function Dashboard() {
                     </td>
                   </tr>
                 ) : (
-                  estudiantesEnRiesgo.map((est) => {
-                    const asistencias = state.asistencias.filter(a => a.estudianteId === est.id);
-                    const porcentajeAsistencia = calcularPorcentajeAsistencia(asistencias);
-                    const notas = state.notas.filter(n => n.estudianteId === est.id);
-                    const promedio = calcularPromedioNotas(notas);
+                  estudiantesEnRiesgo.map((est: any) => {
+                    const porcentajeAsistencia = est.porcentajeAsistencia;
+                    const promedio = 0;
 
                     return (
                       <tr key={est.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">

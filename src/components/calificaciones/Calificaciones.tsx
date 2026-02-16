@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useCursos, useCalificaciones, useAuth } from '@/hooks/useStore';
-import type { Evaluacion, NotaActividad, Grupo } from '@/types';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
+import type { NotaActividad, Grupo } from '@/types';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,13 +15,12 @@ import { FileSpreadsheet, Plus, Users, Sparkles, Brain, Settings, Loader2, Trash
 import { Textarea } from '@/components/ui/textarea';
 import { StudentCalificaciones } from './StudentCalificaciones';
 import { supabase } from '@/lib/supabase';
-import { gruposMock } from '@/data/mockData';
-import { format } from 'date-fns';
+
 
 export default function Calificaciones() {
   const { cursos, cursoSeleccionado, setCursoSeleccionado, fetchEstudiantesPorCurso } = useCursos();
   const {
-    calificaciones, fetchCalificaciones, saveCalificacion,
+    fetchCalificaciones,
     evaluaciones, fetchEvaluaciones, addEvaluacion, deleteEvaluacion,
     notasActividades, saveNotaActividad
   } = useCalificaciones();
@@ -43,6 +42,9 @@ export default function Calificaciones() {
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupMembers, setNewGroupMembers] = useState<string[]>([]);
+  const [minGroupSize, setMinGroupSize] = useState(2);
+  const [maxGroupSize, setMaxGroupSize] = useState(4);
+  const [isConfigGroupOpen, setIsConfigGroupOpen] = useState(false);
 
   // AI Generation State
   const [aiPrompt, setAiPrompt] = useState('');
@@ -127,17 +129,21 @@ export default function Calificaciones() {
   // Initial Data Load
   useEffect(() => {
     if (cursoSeleccionado) {
-      fetchEstudiantesPorCurso(cursoSeleccionado.id);
-      fetchCalificaciones(cursoSeleccionado.id);
+      // Only fetch sensitive data if user is teacher
+      if (usuario?.rol === 'docente') {
+        fetchEstudiantesPorCurso(cursoSeleccionado.id);
+        fetchCalificaciones(cursoSeleccionado.id);
+      }
+      // Everyone can see evaluations and groups (assuming groups are public to course members)
       fetchEvaluaciones(cursoSeleccionado.id);
       fetchGrupos(cursoSeleccionado.id);
     }
-  }, [cursoSeleccionado]);
+  }, [cursoSeleccionado, usuario?.rol]);
 
   // Fetch Groups
   const fetchGrupos = async (cursoId: string) => {
     try {
-      const { data, error } = await supabase.from('grupos').select('*').eq('curso_id', cursoId);
+      const { data } = await supabase.from('grupos').select('*').eq('curso_id', cursoId);
       if (data) {
         // Map DB group string[] to Grupo interface
         const mapped: Grupo[] = data.map((g: any) => ({
@@ -150,14 +156,11 @@ export default function Calificaciones() {
         }));
         setGrupos(mapped);
       } else {
-        // Fallback to mock if DB empty
-        const mocks = gruposMock.filter(g => g.cursoId === cursoId);
-        setGrupos(mocks);
+        setGrupos([]);
       }
     } catch (e) {
       console.error("Error fetching groups", e);
-      // Fallback
-      setGrupos(gruposMock.filter(g => g.cursoId === cursoId));
+      setGrupos([]);
     }
   };
 
@@ -239,6 +242,30 @@ export default function Calificaciones() {
     } catch (e: any) {
       console.error("Error creating group", e);
       alert("Error creando grupo: " + e.message);
+    }
+  };
+
+  const handleUpdateGroupConfig = async () => {
+    if (!cursoSeleccionado) return;
+
+    // In a real app, this config would be saved to the course settings in DB
+    // For now, we update local state which propogates to the UI logic
+    // We might need a new column in 'cursos' table for 'configuracion_grupos' JSONB
+
+    try {
+      const { error } = await supabase
+        .from('cursos')
+        .update({
+          configuracion_grupos: { min: minGroupSize, max: maxGroupSize }
+        })
+        .eq('id', cursoSeleccionado.id);
+
+      if (error) throw error;
+      setIsConfigGroupOpen(false);
+      alert("Configuración de grupos actualizada.");
+    } catch (e: any) {
+      console.error("Error updating group config", e);
+      alert("Error al guardar configuración: " + e.message);
     }
   };
 
@@ -502,6 +529,35 @@ export default function Calificaciones() {
                     </DialogContent>
                   </Dialog>
 
+                  {modoGrupal && (
+                    <Dialog open={isConfigGroupOpen} onOpenChange={setIsConfigGroupOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Settings className="w-4 h-4 mr-2" /> Configurar
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Configuración de Grupos</DialogTitle>
+                          <DialogDescription>Define los límites para la conformación de grupos.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="min" className="text-right">Mínimo</Label>
+                            <Input id="min" type="number" min="1" value={minGroupSize} onChange={e => setMinGroupSize(parseInt(e.target.value))} className="col-span-3" />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="max" className="text-right">Máximo</Label>
+                            <Input id="max" type="number" min="1" value={maxGroupSize} onChange={e => setMaxGroupSize(parseInt(e.target.value))} className="col-span-3" />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button onClick={handleUpdateGroupConfig}>Guardar</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+
                   {/* Group Creation Dialog */}
                   {modoGrupal && (
                     <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
@@ -542,6 +598,9 @@ export default function Calificaciones() {
                                 <div className="text-center text-muted-foreground p-4">No hay estudiantes en este curso.</div>
                               )}
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                              Límite configurado: {minGroupSize} - {maxGroupSize} integrantes.
+                            </p>
                           </div>
                         </div>
                         <DialogFooter>

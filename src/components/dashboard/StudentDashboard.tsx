@@ -1,56 +1,78 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Clock, Calendar, TrendingUp, MapPin, ArrowRight, GraduationCap, Trophy, Ban, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useCursos, useAsistencias, useUI, useAuth } from '@/hooks/useStore';
-import { format } from 'date-fns';
+import { useCursos, useAuth } from '@/hooks/useStore';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CALENDARIO_ACADEMICO_2026_1, notasMock } from '@/data/mockData';
+import { CALENDARIO_ACADEMICO_2026_1 } from '@/utils/academicUtils';
+import { supabase } from '@/lib/supabase';
 
 const DIAS_NOMBRE = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-function addDays(date: Date, days: number): Date {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-}
+
 
 export default function StudentDashboard() {
     const { cursos } = useCursos();
-    const { asistencias } = useAsistencias();
     const { usuario } = useAuth();
     const navigate = useNavigate();
 
     const hoy = new Date();
 
-    // Calculate specific student stats
-    const stats = useMemo(() => {
-        // En teoria, 'cursos' ya viene filtrado desde el store para el estudiante
-        const cursosInscritos = cursos.filter(c => c.activo && !c.archivado);
+    const [globalStats, setGlobalStats] = useState({ promedio: '0.0', asistencia: 100 });
 
-        // Calcular promedio usando notasMock (ya que store.notas esta vacio por defecto)
-        // Filtrar notas del estudiante actual
-        const misNotas = notasMock.filter(n => n.estudianteId === usuario?.id);
-        const promedio = misNotas.length > 0
-            ? misNotas.reduce((acc, n) => acc + n.valor, 0) / misNotas.length
-            : 0;
+    // En teoria, 'cursos' ya viene filtrado desde el store para el estudiante
+    const cursosInscritos = cursos.filter(c => c.activo && !c.archivado);
 
-        // Calcular asistencia
-        // Filtrar asistencias del estudiante
-        const misAsistencias = asistencias.filter(a => a.estudianteId === usuario?.id);
-        const totalAsistencias = misAsistencias.length;
-        const presentes = misAsistencias.filter(a => a.estado === 'presente' || a.estado === 'tarde').length;
-        const porcentajeAsistencia = totalAsistencias > 0
-            ? Math.round((presentes / totalAsistencias) * 100)
-            : 100;
+    useEffect(() => {
+        if (!usuario?.id) return;
 
-        return {
-            cursosInscritos: cursosInscritos.length,
-            promedio: promedio.toFixed(1),
-            asistencia: porcentajeAsistencia
+        const fetchData = async () => {
+            try {
+                // Fetch notas
+                const { data: notas } = await supabase
+                    .from('notas_actividades')
+                    .select('valor')
+                    .eq('estudiante_id', usuario.id);
+
+                let prom = 0;
+                if (notas && notas.length > 0) {
+                    const sum = notas.reduce((acc, curr) => acc + curr.valor, 0);
+                    prom = sum / notas.length;
+                }
+
+                // Fetch asistencias
+                const { data: asis } = await supabase
+                    .from('asistencia')
+                    .select('estado')
+                    .eq('estudiante_id', usuario.id);
+
+                let porcAsistencia = 100;
+                if (asis && asis.length > 0) {
+                    const total = asis.length;
+                    const presentes = asis.filter((a: any) => a.estado === 'presente' || a.estado === 'tarde').length;
+                    porcAsistencia = Math.round((presentes / total) * 100);
+                }
+
+                setGlobalStats({
+                    promedio: prom.toFixed(1),
+                    asistencia: porcAsistencia
+                });
+
+            } catch (error) {
+                console.error("Error loading student stats", error);
+            }
         };
-    }, [cursos, asistencias, usuario]);
+
+        fetchData();
+    }, [usuario?.id]);
+
+    const stats = {
+        cursosInscritos: cursosInscritos.length,
+        promedio: globalStats.promedio,
+        asistencia: globalStats.asistencia
+    };
 
     // Classes for today
     const clasesHoy = useMemo(() => {

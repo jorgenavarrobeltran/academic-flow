@@ -42,56 +42,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useUI, useAuth, useCursos } from '@/hooks/useStore';
 import type { Rubrica, CriterioRubrica } from '@/types/modules';
 
-// Mock data
-const mockRubricas: Rubrica[] = [
-    {
-        id: 'rub-001',
-        titulo: 'Ensayo Argumentativo',
-        descripcion: 'Rúbrica para evaluar ensayos finales de corte.',
-        fechaCreacion: new Date('2025-02-10'),
-        autorId: 'user-1',
-        alcance: 'todos',
-        criterios: [
-            {
-                id: 'crit-1',
-                nombre: 'Estructura',
-                descripcion: 'Organización lógica de las ideas.',
-                peso: 30,
-                niveles: [
-                    { id: 'n1', nombre: 'Excelente', descripcion: 'Estructura clara y lógica.', puntaje: 5.0 },
-                    { id: 'n2', nombre: 'Bueno', descripcion: 'Estructura adecuada pero con fallos menores.', puntaje: 4.0 },
-                    { id: 'n3', nombre: 'Regular', descripcion: 'Desorganizado en partes.', puntaje: 3.0 },
-                ]
-            },
-            {
-                id: 'crit-2',
-                nombre: 'Contenido',
-                descripcion: 'Calidad y profundidad de los argumentos.',
-                peso: 40,
-                niveles: [
-                    { id: 'n4', nombre: 'Excelente', descripcion: 'Argumentos sólidos y bien fundamentados.', puntaje: 5.0 },
-                    { id: 'n5', nombre: 'Bueno', descripcion: 'Buenos argumentos, faltan algunas referencias.', puntaje: 4.0 },
-                ]
-            },
-            {
-                id: 'crit-3',
-                nombre: 'Ortografía y Gramática',
-                descripcion: 'Uso correcto del lenguaje.',
-                peso: 30,
-                niveles: []
-            }
-        ]
-    },
-    {
-        id: 'rub-002',
-        titulo: 'Presentación Oral',
-        descripcion: 'Evaluación de exposiciones grupales.',
-        fechaCreacion: new Date('2025-02-12'),
-        autorId: 'user-1',
-        alcance: 'todos',
-        criterios: []
-    }
-];
+const defaultRubric: Partial<Rubrica> = {
+    titulo: '',
+    descripcion: '',
+    alcance: 'todos',
+    cursosIds: [],
+    criterios: []
+};
 
 export default function Rubricas() {
     const { usuario } = useAuth();
@@ -101,20 +58,14 @@ export default function Rubricas() {
 
     const { showToast } = useUI();
     const { cursos } = useCursos();
-    const [rubricas, setRubricas] = useState<Rubrica[]>(mockRubricas);
+    const [rubricas, setRubricas] = useState<Rubrica[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [cursoFiltro, setCursoFiltro] = useState<string>('todos');
     const [selectedCourse360, setSelectedCourse360] = useState<string>('');
-    const [currentRubrica, setCurrentRubrica] = useState<Partial<Rubrica>>({
-        titulo: '',
-        descripcion: '',
-        alcance: 'todos',
-        cursosIds: [],
-        criterios: []
-    });
+    const [currentRubrica, setCurrentRubrica] = useState<Partial<Rubrica>>(defaultRubric);
 
     const handleCreateRubrica = () => {
-        setCurrentRubrica({ titulo: '', descripcion: '', criterios: [], alcance: 'todos', cursosIds: [] });
+        setCurrentRubrica(defaultRubric);
         setIsDialogOpen(true);
     };
 

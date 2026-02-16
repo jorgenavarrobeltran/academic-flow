@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useCursos, useUI, useAuth } from '@/hooks/useStore';
+import { useCursos, useUI, useAuth, useCalificaciones, useAsistencias } from '@/hooks/useStore';
 import {
   Users,
   FolderOpen,
@@ -26,8 +26,8 @@ import {
   ChevronRight,
   UserPlus
 } from 'lucide-react';
-import { estudiantesMock, gruposMock, proyectosMock, notasMock, asistenciasMock } from '@/data/mockData';
-import type { Grupo, Estudiante } from '@/types';
+import type { Grupo, Estudiante, EstudianteCurso, ProyectoInvestigacion } from '@/types';
+
 
 import { StudentGrupos } from './StudentGrupos';
 
@@ -38,7 +38,9 @@ export function Grupos() {
     return <StudentGrupos />;
   }
 
-  const { cursos, cursoSeleccionado, setCursoSeleccionado } = useCursos();
+  const { cursos, cursoSeleccionado, setCursoSeleccionado, fetchEstudiantesPorCurso } = useCursos();
+  const { grupos, fetchGrupos, calificaciones } = useCalificaciones(); // Usar grupos reales y notas (calificaciones)
+  const { asistencias } = useAsistencias();
   const { showToast } = useUI();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,11 +52,41 @@ export function Grupos() {
     proyecto: '',
   });
 
-  // Grupos del curso
+  // Cargar grupos y estudiantes al cambiar curso
+  useEffect(() => {
+    if (cursoSeleccionado?.id) {
+      fetchGrupos(cursoSeleccionado.id);
+      // Asegurar que tenemos la lista actualizada de estudiantes para el filtrado de "sin grupo"
+      if (!cursoSeleccionado.estudiantes || cursoSeleccionado.estudiantes.length === 0) {
+        fetchEstudiantesPorCurso(cursoSeleccionado.id);
+      }
+    }
+  }, [cursoSeleccionado?.id, fetchGrupos, fetchEstudiantesPorCurso]);
+
+  // Estudiantes reales del curso
+  const estudiantesDelCurso = useMemo(() => {
+    if (!cursoSeleccionado) return [];
+    return cursoSeleccionado.estudiantes.map((ec: EstudianteCurso) => ({
+      id: ec.estudianteId,
+      nombre: ec.nombre || 'Sin Nombre',
+      apellido: ec.apellido || '',
+      email: ec.email,
+      fotoUrl: ec.fotoUrl,
+      codigo: ec.codigo,
+      rol: 'estudiante' as const,
+      programa: ec.programa,
+      semestre: 1, // Fallback if not available
+      activo: true,
+      fechaRegistro: ec.fechaInscripcion || new Date()
+    } as Estudiante));
+  }, [cursoSeleccionado]);
+
+  // Grupos del curso (filtrados del store por ID de curso, aunque fetchGrupos ya debería filtrar en DB, el store podría tener de otros si no limpiamos)
   const gruposDelCurso = useMemo(() => {
     if (!cursoSeleccionado) return [];
-    return gruposMock.filter(g => g.cursoId === cursoSeleccionado.id);
-  }, [cursoSeleccionado]);
+    // Asumiendo que state.grupos ya son los del curso actual tras el fetch
+    return grupos.filter(g => g.cursoId === cursoSeleccionado.id);
+  }, [cursoSeleccionado, grupos]);
 
   // Filtrar grupos
   const gruposFiltrados = useMemo(() => {
@@ -67,24 +99,33 @@ export function Grupos() {
   // Estudiantes sin grupo
   const estudiantesSinGrupo = useMemo(() => {
     const estudiantesEnGrupos = new Set(gruposDelCurso.flatMap(g => g.integrantes));
-    return estudiantesMock.filter(e => !estudiantesEnGrupos.has(e.id));
-  }, [gruposDelCurso]);
+    return estudiantesDelCurso.filter(e => !estudiantesEnGrupos.has(e.id));
+  }, [gruposDelCurso, estudiantesDelCurso]);
 
   // --- Metrics Calculations ---
 
   const calculateGroupAvgGrade = (grupo: Grupo) => {
     const memberIds = grupo.integrantes;
-    const groupGrades = notasMock.filter(n =>
+    // Usar 'calificaciones' del store en lugar de notasMock
+    // Nota: 'calificaciones' tiene estructura diferente a 'NotaActividad'.
+    // Si queremos promedio general, usamos cortes.
+    const groupGrades = calificaciones.filter(n =>
       memberIds.includes(n.estudianteId) && n.cursoId === cursoSeleccionado?.id
     );
+
     if (groupGrades.length === 0) return 0;
-    const sum = groupGrades.reduce((acc, curr) => acc + curr.valor, 0);
+
+    // Promedio de definitivas
+    const sum = groupGrades.reduce((acc, curr) => {
+      const def = (curr.corte1.nota * 0.3) + (curr.corte2.nota * 0.3) + (curr.corte3.nota * 0.4);
+      return acc + def;
+    }, 0);
     return sum / groupGrades.length;
   };
 
   const calculateGroupAttendance = (grupo: Grupo) => {
     const memberIds = grupo.integrantes;
-    const groupAttendance = asistenciasMock.filter(a =>
+    const groupAttendance = asistencias.filter(a =>
       memberIds.includes(a.estudianteId) && a.cursoId === cursoSeleccionado?.id
     );
     if (groupAttendance.length === 0) return 0;
@@ -107,11 +148,12 @@ export function Grupos() {
 
 
   const getEstudiantesGrupo = (integrantes: string[]): Estudiante[] => {
-    return estudiantesMock.filter(e => integrantes.includes(e.id));
+    return estudiantesDelCurso.filter(e => integrantes.includes(e.id));
   };
 
-  const getProyectoGrupo = (grupoId: string) => {
-    return proyectosMock.find(p => p.grupoId === grupoId);
+  const getProyectoGrupo = (_grupoId: string): ProyectoInvestigacion | undefined => {
+    // TODO: Implement projects backend
+    return undefined;
   };
 
   const handleCrearGrupo = () => {

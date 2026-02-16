@@ -5,22 +5,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUI } from '@/hooks/useStore';
+import { useUI, useAuth } from '@/hooks/useStore';
 import { User, Bell, Shield, Save, Globe } from 'lucide-react';
-import { docenteMock } from '@/data/mockData';
 
 export function Configuracion() {
     const { showToast } = useUI();
+    const { usuario } = useAuth();
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [formData, setFormData] = useState({
-        nombre: docenteMock.nombre,
-        apellido: docenteMock.apellido,
-        email: docenteMock.email,
-        titulo: (docenteMock as any).titulo || 'Magister en Ingeniería',
-        departamento: (docenteMock as any).departamento || 'Ingeniería de Sistemas',
-        bio: 'Docente investigador apasionado por la tecnología educativa.',
-        fotoUrl: docenteMock.fotoUrl || '',
+        nombre: usuario?.nombre || '',
+        apellido: usuario?.apellido || '',
+        email: usuario?.email || '',
+        titulo: (usuario as any)?.titulo || 'Magister en Educación',
+        departamento: (usuario as any)?.departamento || 'Ciencias Básicas',
+        bio: (usuario as any)?.bio || 'Docente comprometido con la excelencia académica.',
+        fotoUrl: usuario?.fotoUrl || '',
     });
 
     const resizeImage = (file: File): Promise<string> => {

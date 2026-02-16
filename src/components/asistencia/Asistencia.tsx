@@ -30,7 +30,7 @@ import {
   obtenerFechaClaseMasCercana,
   esFestivo,
   REGLAMENTO_CUL
-} from '@/data/mockData';
+} from '@/utils/academicUtils';
 
 export function Asistencia() {
   const { cursos, cursoSeleccionado, setCursoSeleccionado, fetchEstudiantesPorCurso } = useCursos();
@@ -69,9 +69,7 @@ export function Asistencia() {
       const fechaCercana = obtenerFechaClaseMasCercana(cursoSeleccionado);
       setFechaSeleccionada(fechaCercana);
 
-      if (!cursoSeleccionado.estudiantes || cursoSeleccionado.estudiantes.length === 0) {
-        fetchEstudiantesPorCurso(cursoSeleccionado.id);
-      }
+      fetchEstudiantesPorCurso(cursoSeleccionado.id);
       fetchAsistenciasPorCurso(cursoSeleccionado.id);
     }
   }, [cursoSeleccionado?.id, fetchEstudiantesPorCurso, fetchAsistenciasPorCurso]);
@@ -422,12 +420,12 @@ export function Asistencia() {
                     <Avatar className="w-12 h-12 flex-shrink-0">
                       <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${estudiante.nombre}`} />
                       <AvatarFallback className="bg-[#0070a0] text-white">
-                        {estudiante.nombre ? estudiante.nombre[0] : 'E'}
+                        {estudiante.nombre?.[0]}{estudiante.apellido?.[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium text-[#1f1f1f]">
-                        {estudiante.nombre || 'Estudiante Sin Nombre'}
+                        {estudiante.nombre} {(estudiante.apellido || '')}
                       </p>
                       <p className="text-sm text-[#626a72]">{estudiante.email}</p>
                       <div className="flex items-center gap-2 mt-1">

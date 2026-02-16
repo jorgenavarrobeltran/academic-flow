@@ -30,7 +30,6 @@ import {
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { estudiantesMock } from '@/data/mockData';
 import type { Alerta } from '@/types';
 
 const tipoConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
@@ -178,7 +177,14 @@ export function Alertas() {
 
   const getEstudiante = (estudianteId?: string) => {
     if (!estudianteId) return null;
-    return estudiantesMock.find(e => e.id === estudianteId);
+    // Buscar estudiante en los cursos cargados en memoria
+    for (const curso of cursos) {
+      if (curso.estudiantes) {
+        const found = curso.estudiantes.find(e => e.estudianteId === estudianteId);
+        if (found) return found;
+      }
+    }
+    return null;
   };
 
   const handleMarcarLeida = (alertaId: string) => {
@@ -210,7 +216,7 @@ export function Alertas() {
 
     // Replace placeholders
     const replacements: Record<string, string> = {
-      '{nombre_estudiante}': estudiante ? `${estudiante.nombre} ${estudiante.apellido}` : 'Estudiante',
+      '{nombre_estudiante}': estudiante ? `${estudiante.nombre || ''} ${estudiante.apellido || ''}`.trim() : 'Estudiante',
       '{nombre_curso}': curso?.nombre || 'Curso',
       '{grupo}': curso?.grupo || '',
       '{nombre_docente}': 'Juan Pérez',
@@ -229,7 +235,7 @@ export function Alertas() {
     });
 
     setEmailDraft({
-      destinatarios: estudiante ? [`${estudiante.nombre.toLowerCase()}.${estudiante.apellido.toLowerCase()}@unilibre.edu.co`] : [],
+      destinatarios: estudiante ? [(estudiante.email || '').toLowerCase()] : [],
       asunto,
       cuerpo,
       alertaId: alerta.id,
@@ -270,9 +276,10 @@ export function Alertas() {
     const curso = cursos.find(c => c.id === cursoId);
     if (!curso?.estudiantes) return;
     const emails = curso.estudiantes.map(e => {
-      const est = estudiantesMock.find(s => s.id === e.estudianteId);
-      return est ? `${est.nombre.toLowerCase()}.${est.apellido.toLowerCase()}@unilibre.edu.co` : '';
-    }).filter(Boolean);
+      // En un entorno real, el email debería estar en el objeto estudiante
+      // Si no está, lo generamos o usamos un campo si existiera
+      return e.email || `${(e.nombre || '').toLowerCase()}.${(e.apellido || '').toLowerCase()}@unilibre.edu.co`;
+    }).filter(e => e.includes('@'));
     setEmailDraft(prev => ({
       ...prev,
       destinatarios: [...new Set([...prev.destinatarios, ...emails])],

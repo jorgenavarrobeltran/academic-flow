@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { useCursos, useAsistencias, useAuth } from '../hooks/useStore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CALENDARIO_ACADEMICO_2026_1 } from '../data/mockData';
+import { CALENDARIO_ACADEMICO_2026_1 } from '@/utils/academicUtils';
 import StudentDashboard from '../components/dashboard/StudentDashboard';
 
 const DIAS_NOMBRE = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];

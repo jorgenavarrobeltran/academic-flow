@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useStore, useUI, useAuth } from '../../hooks/useStore';
-import { estudiantesMock, notasMock } from '../../data/mockData';
+
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -70,27 +70,21 @@ export default function EarlyWarning() {
         state.cursos.forEach(curso => {
             if (selectedCourse !== 'all' && curso.id !== selectedCourse) return;
 
-            curso.estudiantes.forEach(estCurso => {
-                // Find student details from mock or store
-                const student = estudiantesMock.find(e => e.id === estCurso.estudianteId);
-                if (!student) return;
-
+            (curso.estudiantes || []).forEach(estCurso => {
                 // 1. Attendance Calculation
                 const courseAttendance = state.asistencias.filter(
-                    a => a.cursoId === curso.id && a.estudianteId === student.id
+                    a => a.cursoId === curso.id && a.estudianteId === estCurso.estudianteId
                 );
-                const totalClasses = 16; // Assumed for mock calculation, should be dynamic
+                // dynamic based on logs
                 const absences = courseAttendance.filter(a => a.estado === 'ausente').length;
-                const attendancePercentage = (absences / totalClasses) * 100;
-                const attendanceRiskScore = Math.min(attendancePercentage * 5, 100); // 20% absence = 100 score
+                const attendancePercentage = (absences / Math.max(courseAttendance.length, 1)) * 100;
+                // If no attendance yet, assume 0 risk
+                const attendanceRiskScore = courseAttendance.length > 0 ? Math.min(attendancePercentage * 5, 100) : 0;
 
                 // 2. Grades Calculation
-                // Try to find grades in state.notas (Calificacion[]) or notasMock (Nota[])
                 let averageGrade = 0;
-
-                // Strategy: Check if we have Calificacion style (store) or Nota style (mock)
                 const studentCalificacion = state.notas.find(
-                    n => n.cursoId === curso.id && n.estudianteId === student.id
+                    n => n.cursoId === curso.id && n.estudianteId === estCurso.estudianteId
                 );
 
                 if (studentCalificacion) {
@@ -98,19 +92,10 @@ export default function EarlyWarning() {
                     const c1 = studentCalificacion.corte1.nota || 0;
                     const c2 = studentCalificacion.corte2.nota || 0;
                     const c3 = studentCalificacion.corte3.nota || 0;
-                    // Simple average for now, ignoring weights for quick risk calc
-                    // Or use max possible? Let's use avg of non-zero
+
                     const grades = [c1, c2, c3].filter(g => g > 0);
                     if (grades.length > 0) {
                         averageGrade = grades.reduce((a, b) => a + b, 0) / grades.length;
-                    }
-                } else {
-                    // Fallback to notasMock (Nota[])
-                    const studentNotas = notasMock.filter(
-                        n => n.cursoId === curso.id && n.estudianteId === student.id
-                    );
-                    if (studentNotas.length > 0) {
-                        averageGrade = studentNotas.reduce((acc, curr) => acc + curr.valor, 0) / studentNotas.length;
                     }
                 }
 
@@ -121,16 +106,11 @@ export default function EarlyWarning() {
                     if (averageGrade < 3.0) gradeRiskScore = 80 + ((3.0 - averageGrade) * 10);
                     else if (averageGrade < 3.5) gradeRiskScore = 40;
                     else gradeRiskScore = 0;
-                } else {
-                    // No grades yet, treat as low risk or neutral?
-                    // Let's assume 0 risk if no data
-                    gradeRiskScore = 0;
                 }
 
-
                 // 3. Mocked Factors (Resources, Assignments, etc - since we don't have full data yet)
-                const resourcesRiskScore = Math.random() * 40; // Random mock
-                const assignmentsRiskScore = Math.random() * 30; // Random mock
+                const resourcesRiskScore = 0; // Disabled until implemented
+                const assignmentsRiskScore = 0; // Disabled until implemented
 
                 // Total Score Calculation
                 const totalScore = (
@@ -145,12 +125,12 @@ export default function EarlyWarning() {
                 else if (totalScore >= THRESHOLDS.MEDIUM) riskLevel = 'medium';
 
                 risks.push({
-                    studentId: student.id,
-                    name: `${student.nombre} ${student.apellido}`,
-                    program: student.programa,
+                    studentId: estCurso.estudianteId,
+                    name: `${estCurso.nombre || 'Estudiante'} ${estCurso.apellido || ''}`,
+                    program: estCurso.programa || 'Programa General',
                     courseName: curso.nombre,
                     absences,
-                    attendancePercentage,
+                    attendancePercentage: Math.round(attendancePercentage),
                     averageGrade,
                     riskScore: Math.round(totalScore),
                     riskLevel,

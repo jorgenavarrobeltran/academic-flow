@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useCursos, useUI, useAuth } from '@/hooks/useStore';
+import { useCursos, useUI, useAuth, useCalificaciones, useAsistencias } from '@/hooks/useStore';
 import {
     BarChart,
     Bar,
@@ -32,12 +32,13 @@ import { utils, writeFile } from 'xlsx';
 import { format } from 'date-fns';
 
 
-// Mock data helpers (assuming we can get data from the store or mocks)
-import { estudiantesMock } from '@/data/mockData';
+
 
 export function Reportes() {
     const { usuario } = useAuth();
     const { cursos, cursoSeleccionado, setCursoSeleccionado } = useCursos();
+    const { calificaciones, fetchCalificaciones } = useCalificaciones();
+    const { asistencias, fetchAsistenciasPorCurso } = useAsistencias();
     const { showToast } = useUI();
     const [reportType, setReportType] = useState('rendimiento');
     const [periodo, setPeriodo] = useState('2026-1');
@@ -51,30 +52,60 @@ export function Reportes() {
     const activeCourseId = cursoSeleccionado?.id || cursos[0]?.id;
     const activeCourse = cursos.find(c => c.id === activeCourseId) || cursos[0];
 
-    // Mock data generator for charts based on selected course
+    // Cargar datos reales al cambiar curso
+    useEffect(() => {
+        if (activeCourseId) {
+            fetchCalificaciones(activeCourseId);
+            fetchAsistenciasPorCurso(activeCourseId);
+        }
+    }, [activeCourseId, fetchCalificaciones, fetchAsistenciasPorCurso]);
+
+    // Calcular datos reales
     const performanceData = useMemo(() => {
+        if (!calificaciones || calificaciones.length === 0) return [];
+
+        // Calcular promedio por corte
+        const corte1 = calificaciones.reduce((acc, c) => acc + (c.corte1?.nota || 0), 0) / calificaciones.length;
+        const corte2 = calificaciones.reduce((acc, c) => acc + (c.corte2?.nota || 0), 0) / calificaciones.length;
+        const corte3 = calificaciones.reduce((acc, c) => acc + (c.corte3?.nota || 0), 0) / calificaciones.length;
+
         return [
-            { name: 'Corte 1', promedio: 3.8, aprobados: 85, reprobados: 15 },
-            { name: 'Corte 2', promedio: 3.5, aprobados: 78, reprobados: 22 },
-            { name: 'Corte 3', promedio: 4.0, aprobados: 90, reprobados: 10 },
+            { name: 'Corte 1', promedio: parseFloat(corte1.toFixed(1)), aprobados: 0, reprobados: 0 },
+            { name: 'Corte 2', promedio: parseFloat(corte2.toFixed(1)), aprobados: 0, reprobados: 0 },
+            { name: 'Corte 3', promedio: parseFloat(corte3.toFixed(1)), aprobados: 0, reprobados: 0 },
         ];
-    }, [activeCourseId]);
+    }, [calificaciones]);
 
     const approvalData = useMemo(() => {
+        if (!calificaciones || calificaciones.length === 0) return [];
+
+        let aprobados = 0;
+        let riesgo = 0;
+        let reprobados = 0;
+
+        calificaciones.forEach(cal => {
+            const def = (cal.corte1.nota * 0.3) + (cal.corte2.nota * 0.3) + (cal.corte3.nota * 0.4);
+            if (def >= 3.0) aprobados++;
+            else if (def >= 2.0) riesgo++;
+            else reprobados++;
+        });
+
         return [
-            { name: 'Aprobados', value: 25, color: '#22c55e' }, // Green
-            { name: 'En Riesgo', value: 8, color: '#f59e0b' }, // Amber
-            { name: 'Reprobados', value: 3, color: '#ef4444' }, // Red
+            { name: 'Aprobados', value: aprobados, color: '#22c55e' },
+            { name: 'En Riesgo', value: riesgo, color: '#f59e0b' },
+            { name: 'Reprobados', value: reprobados, color: '#ef4444' },
         ];
-    }, [activeCourseId]);
+    }, [calificaciones]);
 
     const attendanceData = useMemo(() => {
+        // Datos simulados o basados en asistencias si tuvieramos fechas
+        // Por ahora retornamos vacio o mock si no hay fechas claras en asistencias
         return Array.from({ length: 10 }, (_, i) => ({
             semana: `Sem ${i + 1}`,
-            asistencia: Math.floor(Math.random() * 20) + 80, // 80-100%
-            faltas: Math.floor(Math.random() * 5),
+            asistencia: 100, // Placeholder
+            faltas: 0,
         }));
-    }, [activeCourseId]);
+    }, [asistencias]);
 
     const handleExportExcel = () => {
         // Generate simple excel data
@@ -346,14 +377,14 @@ export function Reportes() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
-                                    {estudiantesMock.slice(0, 3).map((est, i) => (
+                                    {(activeCourse?.estudiantes || []).slice(0, 3).map((est: any, i: number) => (
                                         <div key={i} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden">
-                                                    {est.fotoUrl ? <img src={est.fotoUrl} alt={est.nombre} /> : <span className="flex items-center justify-center h-full text-xs font-bold">{est.nombre[0]}</span>}
+                                                    {est.fotoUrl ? <img src={est.fotoUrl} alt={est.nombre} /> : <span className="flex items-center justify-center h-full text-xs font-bold">{est.nombre ? est.nombre[0] : '?'}</span>}
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium text-sm">{est.nombre} {est.apellido}</p>
+                                                    <p className="font-medium text-sm">{est.nombre || 'Estudiante'} {est.apellido}</p>
                                                     <p className="text-xs text-muted-foreground">{est.codigo}</p>
                                                 </div>
                                             </div>

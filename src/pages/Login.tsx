@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useUI, useAuth } from '../hooks/useStore';
 import { supabase } from '../lib/supabase';
-import { docenteMock, estudiantesMock } from '../data/mockData';
+
 
 export default function Login() {
     const navigate = useNavigate();
@@ -23,14 +23,7 @@ export default function Login() {
         e.preventDefault();
         setIsLoading(true);
 
-        // Backdoor para usuario demo específico (solicitado por usuario)
-        if (email === 'jnavar-05@hotmail.com' && pass === 'c89050567304C-') {
-            login(docenteMock);
-            showToast(`Bienvenido, ${docenteMock.nombre}`, 'success');
-            navigate('/dashboard');
-            setIsLoading(false);
-            return;
-        }
+
 
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -185,9 +178,7 @@ export default function Login() {
 function LoginForm({ role, isLoading, onSubmit }: { role: string, isLoading: boolean, onSubmit: (e: React.FormEvent, email: string, pass: string) => void }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { login } = useAuth();
-    const { showToast } = useUI();
-    const navigate = useNavigate();
+
 
     const handleSubmit = (e: React.FormEvent) => {
         onSubmit(e, email, password);
@@ -252,23 +243,7 @@ function LoginForm({ role, isLoading, onSubmit }: { role: string, isLoading: boo
 
                     </Button>
 
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-xs text-muted-foreground hover:bg-transparent hover:text-primary mt-2 h-auto py-1"
-                        onClick={() => {
-                            if (role === 'estudiante') {
-                                login(estudiantesMock[0]);
-                            } else {
-                                login(docenteMock);
-                            }
-                            showToast('Modo Demo Activado', 'info');
-                            navigate('/dashboard');
-                        }}
-                    >
-                        Ingresar en Modo Demo (Sin Backend)
-                    </Button>
+
                 </form>
             </CardContent>
         </Card>

@@ -20,7 +20,7 @@ import {
   ClipboardCheck,
   MapPin,
 } from 'lucide-react';
-import { CALENDARIO_ACADEMICO_2026_1, diasFestivos2026 } from '@/data/mockData';
+import { CALENDARIO_ACADEMICO_2026_1, diasFestivos2026 } from '@/utils/academicUtils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { EventoCalendario } from '@/types';
