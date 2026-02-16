@@ -19,7 +19,7 @@ const festivosColombia2026: Date[] = [
     new Date('2026-11-16'), // Independencia de Cartagena
     new Date('2026-12-08'), // Inmaculada Concepción
     new Date('2026-12-25'), // Navidad
-    // Recesos institucionales CUL
+    // Recesos institucionales
     new Date('2026-02-14'), // Receso Carnavales
     new Date('2026-02-16'), // Receso Carnavales
     new Date('2026-02-17'), // Receso Carnavales
@@ -30,7 +30,7 @@ const festivosColombia2026: Date[] = [
 
 export const diasFestivos2026 = festivosColombia2026.map(d => ({ fecha: d, nombre: 'Festivo/Receso' }));
 
-// Calendario Académico CUL 2026-1
+// Calendario Académico 2026-1
 export const CALENDARIO_ACADEMICO_2026_1 = {
     INICIO_CLASES: new Date('2026-02-02'),
     FIN_CLASES: new Date('2026-05-30'),
@@ -155,8 +155,8 @@ export const calcularClasesPasadas = (curso: { fechaInicio: Date; fechaFin: Date
     return fechas.filter(f => f <= hastaFecha).length;
 };
 
-// Constantes del Reglamento CUL
-export const REGLAMENTO_CUL = {
+// Constantes del Reglamento Académico
+export const REGLAMENTO_ACADEMICO = {
     // Sistema de calificaciones
     ESCALA_MIN: 0.0,
     ESCALA_MAX: 5.0,

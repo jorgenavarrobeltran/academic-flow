@@ -17,7 +17,7 @@ import type { EstadoAsistencia } from '@/types';
 import {
     calcularTotalClasesSemestre,
     calcularClasesPasadas,
-    REGLAMENTO_CUL
+    REGLAMENTO_ACADEMICO
 } from '@/utils/academicUtils';
 
 export function StudentAsistencia() {
@@ -136,10 +136,10 @@ export function StudentAsistencia() {
                         <div>
                             <p className="text-sm text-[#626a72]">Porcentaje Global</p>
                             <div className="flex items-center gap-2">
-                                <p className={`text-2xl font-bold ${stats.porcentaje < REGLAMENTO_CUL.ASISTENCIA_MINIMA ? 'text-red-600' : 'text-green-600'}`}>
+                                <p className={`text-2xl font-bold ${stats.porcentaje < REGLAMENTO_ACADEMICO.ASISTENCIA_MINIMA ? 'text-red-600' : 'text-green-600'}`}>
                                     {stats.porcentaje}%
                                 </p>
-                                {stats.porcentaje < REGLAMENTO_CUL.ASISTENCIA_MINIMA && (
+                                {stats.porcentaje < REGLAMENTO_ACADEMICO.ASISTENCIA_MINIMA && (
                                     <Badge variant="destructive" className="text-xs">
                                         <AlertTriangle className="w-3 h-3 mr-1" /> Riesgo
                                     </Badge>

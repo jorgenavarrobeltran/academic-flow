@@ -109,6 +109,49 @@ export function Dashboard() {
     return null;
   }).filter(Boolean).slice(0, 5);
 
+  // --- Demographic Calculations ---
+
+  // 1. Average Age
+  const studentsWithAge = allStudents.filter(s => s.edad && s.edad > 0);
+  const uniqueStudentsWithAge = uniqueStudentIds.map(id => studentsWithAge.find(s => s.estudianteId === id)).filter(Boolean);
+
+  const promedioEdad = uniqueStudentsWithAge.length > 0
+    ? Math.round(uniqueStudentsWithAge.reduce((acc, curr) => acc + (curr?.edad || 0), 0) / uniqueStudentsWithAge.length)
+    : 0;
+
+  // 2. Homologantes
+  const estudiantesHomologantes = uniqueStudentIds.filter(id => {
+    const s = allStudents.find(st => st.estudianteId === id);
+    return s?.esHomologante;
+  }).length;
+  const porcentajeHomologantes = totalEstudiantes > 0 ? Math.round((estudiantesHomologantes / totalEstudiantes) * 100) : 0;
+
+
+  // 3. Gender Distribution
+  const genderCounts = uniqueStudentIds.reduce((acc, id) => {
+    const s = allStudents.find(st => st.estudianteId === id);
+    const gender = s?.genero || 'No especificado';
+    acc[gender] = (acc[gender] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const generoData = [
+    { name: 'Masculino', value: genderCounts['Masculino'] || 0, color: '#2196F3' },
+    { name: 'Femenino', value: genderCounts['Femenino'] || 0, color: '#E91E63' },
+    { name: 'Otro/No esp.', value: (genderCounts['Otro'] || 0) + (genderCounts['Prefiero no decir'] || 0) + (genderCounts['No especificado'] || 0), color: '#9E9E9E' }
+  ].filter(d => d.value > 0);
+
+  // 4. Faculty/Program Distribution
+  const facultyCounts = uniqueStudentIds.reduce((acc, id) => {
+    const s = allStudents.find(st => st.estudianteId === id);
+    // Prefer Faculty if available, else Program
+    const key = s?.facultad || s?.programa || 'Sin información';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const facultadData = Object.entries(facultyCounts).map(([name, value]) => ({ name, value }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -457,6 +500,105 @@ export function Dashboard() {
             </CardContent>
           </Card>
         ))}
+      </div>
+      {/* Demographics Section */}
+      <h2 className="text-xl font-bold mt-8 mb-4">Análisis Demográfico y Académico</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="glass-card border-none">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Edad Promedio</p>
+                <p className="text-4xl font-bold text-foreground mt-2">{promedioEdad} años</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100/50 rounded-2xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm">
+              <span className="text-muted-foreground">Estudiantes registrados</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-none">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Homologantes</p>
+                <p className="text-4xl font-bold text-foreground mt-2">{porcentajeHomologantes}%</p>
+              </div>
+              <div className="w-12 h-12 bg-indigo-100/50 rounded-2xl flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-indigo-600" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm">
+              <span className="text-indigo-600 font-medium">{estudiantesHomologantes} estudiantes</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Gender Distribution */}
+        <Card className="glass-card border-none">
+          <CardHeader>
+            <CardTitle className="text-lg">Distribución por Género</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={generoData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {generoData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 flex justify-center gap-4 flex-wrap">
+              {generoData.map((item, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-muted-foreground">{item.name}: {item.value}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Faculty Distribution */}
+        <Card className="glass-card border-none">
+          <CardHeader>
+            <CardTitle className="text-lg">Distribución por Facultad</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={facultadData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#0070a0" radius={[0, 4, 4, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

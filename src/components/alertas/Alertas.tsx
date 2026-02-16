@@ -57,7 +57,7 @@ const emailTemplates = [
 
 Le informo que según el registro de asistencia del curso {nombre_curso} (Grupo {grupo}), usted acumula un {porcentaje_fallas}% de inasistencias.
 
-De acuerdo con el Reglamento Estudiantil de la CUL, el máximo permitido es del 20%. Si supera este límite, la asignatura se pierde con nota de 0.0.
+De acuerdo con el Reglamento Estudiantil, el máximo permitido es del 20%. Si supera este límite, la asignatura se pierde con nota de 0.0.
 
 Le recomiendo:
 • Asistir a todas las clases restantes
@@ -67,7 +67,7 @@ Le recomiendo:
 Atentamente,
 {nombre_docente}
 Docente - {nombre_curso}
-Universidad Libre - Seccional Barranquilla`,
+AcademiFlow`,
   },
   {
     id: 'bajo_rendimiento',
@@ -89,7 +89,7 @@ Quedo atento/a para agendar una tutoría personalizada.
 Atentamente,
 {nombre_docente}
 Docente - {nombre_curso}
-Universidad Libre - Seccional Barranquilla`,
+AcademiFlow`,
   },
   {
     id: 'fecha_limite_entrega',
@@ -109,7 +109,7 @@ Si tiene dudas sobre el contenido o formato, por favor contácteme antes de la f
 Atentamente,
 {nombre_docente}
 Docente - {nombre_curso}
-Universidad Libre - Seccional Barranquilla`,
+AcademiFlow`,
   },
   {
     id: 'nota_disponible',
@@ -126,7 +126,7 @@ Si tiene alguna observación sobre la calificación, dispone de {dias_correccion
 Atentamente,
 {nombre_docente}
 Docente - {nombre_curso}
-Universidad Libre - Seccional Barranquilla`,
+AcademiFlow`,
   },
 ];
 
@@ -359,7 +359,7 @@ export function Alertas() {
     setTestingEmail(false);
     if (result.success) {
       showToast(`✅ Email de prueba enviado a ${testTo}`, 'success');
-      setEmailsSent(prev => [{ to: testTo, subject: 'Test AcademicFlow', date: new Date(), status: 'sent' }, ...prev]);
+      setEmailsSent(prev => [{ to: testTo, subject: 'Test AcademiFlow', date: new Date(), status: 'sent' }, ...prev]);
     } else {
       showToast(`❌ Error: ${result.message}`, 'error');
     }

@@ -1,4 +1,4 @@
-// Store global de la aplicación - AcademicFlow Pro
+// Store global de la aplicación - AcademiFlow
 
 import React, { createContext, useContext, useReducer, useCallback, type ReactNode } from 'react';
 import type {
@@ -299,7 +299,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             email,
             codigo,
             foto_url,
-            programa
+            programa,
+            semestre,
+            genero,
+            facultad,
+            es_homologante,
+            ha_visto_clase_antes,
+            biografia
           )
         )
           `)
@@ -347,7 +353,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               email: i.usuarios?.email,
               codigo: i.usuarios?.codigo,
               fotoUrl: i.usuarios?.foto_url,
-              programa: i.usuarios?.programa
+              programa: i.usuarios?.programa,
+              genero: i.usuarios?.genero,
+              facultad: i.usuarios?.facultad,
+              esHomologante: i.usuarios?.es_homologante,
+              haVistoClaseAntes: i.usuarios?.ha_visto_clase_antes,
+              biografia: i.usuarios?.biografia,
+              // Try to parse age from biografia "Edad: X"
+              edad: i.usuarios?.biografia?.includes('Edad:') ? parseInt(i.usuarios.biografia.split('Edad:')[1]) : undefined
             })) : [],
             configuracionNotas: c.configuracion_notas || {
               cortes: [
@@ -650,7 +663,13 @@ export function useCursos() {
               email,
               codigo,
               foto_url,
-              programa
+              programa,
+              semestre,
+              genero,
+              facultad,
+              es_homologante,
+              ha_visto_clase_antes,
+              biografia
             )
           )
         `)
@@ -689,7 +708,13 @@ export function useCursos() {
             email: i.usuarios?.email,
             codigo: i.usuarios?.codigo,
             fotoUrl: i.usuarios?.foto_url,
-            programa: i.usuarios?.programa
+            programa: i.usuarios?.programa,
+            genero: i.usuarios?.genero,
+            facultad: i.usuarios?.facultad,
+            esHomologante: i.usuarios?.es_homologante,
+            haVistoClaseAntes: i.usuarios?.ha_visto_clase_antes,
+            biografia: i.usuarios?.biografia,
+            edad: i.usuarios?.biografia?.includes('Edad:') ? parseInt(i.usuarios.biografia.split('Edad:')[1]) : undefined
           })) : [],
           configuracionNotas: c.configuracion_notas || {
             cortes: [

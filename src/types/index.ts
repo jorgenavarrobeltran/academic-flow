@@ -1,4 +1,4 @@
-// Tipos del Sistema de Gestión Académica - AcademicFlow Pro
+// Tipos del Sistema de Gestión Académica - AcademiFlow
 
 export interface Usuario {
   id: string;
@@ -33,6 +33,9 @@ export interface Estudiante extends Usuario {
   esHomologante?: boolean; // Diferencia académica crítica
   haVistoClaseAntes?: boolean; // Si ha sido alumno tuyo previamente
   celular?: string;
+  facultad?: string;
+  edad?: number; // Parsed from biografia
+  biografia?: string;
 }
 
 export type Programa =
@@ -87,6 +90,12 @@ export interface EstudianteCurso {
   codigo?: string;
   fotoUrl?: string;
   programa?: string;
+  genero?: string;
+  facultad?: string;
+  esHomologante?: boolean;
+  haVistoClaseAntes?: boolean;
+  biografia?: string;
+  edad?: number;
 }
 
 export interface ConfiguracionNotas {

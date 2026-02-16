@@ -337,7 +337,7 @@ export default function Calendario() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Calendario Académico</h2>
           <p className="text-muted-foreground">
-            Semestre 2026-1 · CUL — Gestiona eventos, clases y evaluaciones
+            Semestre 2026-1 · AcademiFlow — Gestiona eventos, clases y evaluaciones
           </p>
         </div>
         <div className="flex gap-2 flex-wrap items-center">

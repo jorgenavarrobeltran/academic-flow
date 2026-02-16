@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUI, useAlertas } from '@/hooks/useStore';
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Users, 
-  ClipboardCheck, 
-  GraduationCap, 
-  Calendar, 
-  Bell, 
-  FolderOpen, 
-  Library, 
-  Award, 
-  Settings, 
-  ChevronLeft, 
+import {
+  LayoutDashboard,
+  BookOpen,
+  Users,
+  ClipboardCheck,
+  GraduationCap,
+  Calendar,
+  Bell,
+  FolderOpen,
+  Library,
+  Award,
+  Settings,
+  ChevronLeft,
   ChevronRight,
   LogOut,
   Menu
@@ -64,8 +64,8 @@ export function Sidebar() {
         onClick={() => handleItemClick(item.id)}
         className={cn(
           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative',
-          isActive 
-            ? 'bg-[#0070a0] text-white' 
+          isActive
+            ? 'bg-[#0070a0] text-white'
             : 'text-[#626a72] hover:bg-[#e6f7ff] hover:text-[#0070a0]',
           !sidebarOpen && !isBottom && 'justify-center px-2'
         )}
@@ -74,22 +74,22 @@ export function Sidebar() {
           'w-5 h-5 flex-shrink-0',
           isActive ? 'text-white' : 'text-[#99a4af] group-hover:text-[#0070a0]'
         )} />
-        
+
         {(sidebarOpen || isBottom) && (
           <span className="text-sm font-medium truncate">{item.label}</span>
         )}
-        
+
         {badge !== undefined && badge > 0 && (
           <span className={cn(
             'ml-auto text-xs font-semibold px-2 py-0.5 rounded-full',
-            isActive 
-              ? 'bg-white text-[#0070a0]' 
+            isActive
+              ? 'bg-white text-[#0070a0]'
               : 'bg-red-500 text-white'
           )}>
             {badge}
           </span>
         )}
-        
+
         {/* Tooltip para modo colapsado */}
         {!sidebarOpen && !isBottom && (
           <div className="absolute left-full ml-2 px-2 py-1 bg-[#1f1f1f] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
@@ -112,7 +112,7 @@ export function Sidebar() {
 
       {/* Mobile overlay */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setMobileMenuOpen(false)}
         />
@@ -137,8 +137,8 @@ export function Sidebar() {
             </div>
             {sidebarOpen && (
               <div className="overflow-hidden">
-                <h1 className="font-bold text-[#1f1f1f] text-lg leading-tight">AcademicFlow</h1>
-                <p className="text-xs text-[#99a4af]">CUL Barranquilla</p>
+                <h1 className="font-bold text-[#1f1f1f] text-lg leading-tight">AcademiFlow</h1>
+                <p className="text-xs text-[#99a4af]">Jorge Navarro Beltran</p>
               </div>
             )}
           </div>
@@ -152,9 +152,9 @@ export function Sidebar() {
         {/* Bottom section */}
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-[#dee5eb] bg-white">
           {bottomItems.map(item => renderMenuItem(item, true))}
-          
+
           <button
-            onClick={() => {}}
+            onClick={() => { }}
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-[#626a72] hover:bg-red-50 hover:text-red-600 mt-1',
               !sidebarOpen && 'justify-center px-2'

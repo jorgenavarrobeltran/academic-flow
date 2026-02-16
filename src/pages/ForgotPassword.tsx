@@ -52,7 +52,7 @@ export default function ForgotPassword() {
                                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         id="email"
-                                        placeholder="usuario@cul.edu.co"
+                                        placeholder="usuario@academiflow.com"
                                         className="pl-9"
                                         type="email"
                                         required

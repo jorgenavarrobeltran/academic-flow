@@ -120,7 +120,7 @@ export function ImportarEstudiantes({ preselectedCursoId, onImportSuccess }: Imp
                 parsed.push({
                     nombre,
                     apellido,
-                    email: emailIdx !== -1 && row[emailIdx] ? String(row[emailIdx]).trim() : `estudiante${Date.now() + i}@cul.edu.co`,
+                    email: emailIdx !== -1 && row[emailIdx] ? String(row[emailIdx]).trim() : `estudiante${Date.now() + i}@academiflow.com`,
                     codigo: codigoIdx !== -1 && row[codigoIdx] ? String(row[codigoIdx]).trim() : `COD-${Math.floor(Math.random() * 10000)}`,
                     programa: programaIdx !== -1 ? String(row[programaIdx]).trim() : undefined,
                     semestre: semestreIdx !== -1 ? parseInt(row[semestreIdx]) : undefined,

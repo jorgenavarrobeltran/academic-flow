@@ -527,8 +527,16 @@ export function Estudiantes() {
                     <p className="text-sm text-[#99a4af]">Email</p>
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-[#0070a0]" />
-                      <p className="font-medium">{estudianteSeleccionado.email}</p>
+                      <p className="font-medium truncate max-w-[180px]">{estudianteSeleccionado.email}</p>
                     </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-[#99a4af]">Documento de Identidad</p>
+                    <p className="font-medium">{(estudianteSeleccionado as any).documento_identidad || (estudianteSeleccionado as any).documentoIdentidad || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-[#99a4af]">Género</p>
+                    <p className="font-medium">{(estudianteSeleccionado as any).genero || '-'}</p>
                   </div>
                   {/* Nuevos datos de perfil */}
                   <div>

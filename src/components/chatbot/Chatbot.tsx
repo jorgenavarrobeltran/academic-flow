@@ -70,7 +70,7 @@ export default function Chatbot() {
             return 'Tu horario está disponible en el Panel de Control y en la sección de Calendario.';
         }
         if (lowerText.includes('ayuda') || lowerText.includes('soporte')) {
-            return 'Si tienes problemas técnicos, por favor contacta a soporte@academicflow.edu.';
+            return 'Si tienes problemas técnicos, por favor contacta a soporte@academiflow.com.';
         }
         return 'Entiendo. Para más detalles, te sugiero revisar la sección de Recursos o contactar a tu docente.';
     };

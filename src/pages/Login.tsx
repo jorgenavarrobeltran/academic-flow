@@ -80,9 +80,9 @@ export default function Login() {
                                 <GraduationCap className="h-8 w-8" />
                             </div>
                         </div>
-                        <h1 className="text-3xl font-bold tracking-tight">Bienvenido a AcademicFlow</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">Bienvenido a AcademiFlow</h1>
                         <p className="text-muted-foreground">
-                            Plataforma de Gestión Académica - CUL
+                            Plataforma de Gestión Académica
                         </p>
                     </div>
 
@@ -127,7 +127,7 @@ export default function Login() {
                 <div className="relative z-20 flex flex-col justify-between h-full p-12 text-white">
                     <div className="flex items-center space-x-2">
                         <GraduationCap className="h-8 w-8" />
-                        <span className="text-xl font-bold">Corporación Universitaria Latinoamericana</span>
+                        <span className="text-xl font-bold">AcademiFlow</span>
                     </div>
 
                     <div className="space-y-6 max-w-lg">
@@ -163,7 +163,7 @@ export default function Login() {
                     </div>
 
                     <div className="flex justify-between items-end text-white/60 text-sm">
-                        <p>© 2026 AcademicFlow CUL. Todos los derechos reservados.</p>
+                        <p>© 2026 AcademiFlow. Todos los derechos reservados. Desarrollado por Jorge Navarro Beltran.</p>
                         <div className="flex space-x-4">
                             <a href="#" className="hover:text-white transition-colors">Privacidad</a>
                             <a href="#" className="hover:text-white transition-colors">Términos</a>
@@ -201,7 +201,7 @@ function LoginForm({ role, isLoading, onSubmit }: { role: string, isLoading: boo
                                 <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     id={`email-${role}`}
-                                    placeholder="usuario@cul.edu.co"
+                                    placeholder="usuario@academiflow.com"
                                     className="pl-9"
                                     type="email"
                                     required

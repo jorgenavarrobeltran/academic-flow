@@ -31,7 +31,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailRespo
                 to: params.to,
                 subject: params.subject,
                 body: params.body,
-                from_name: params.fromName || 'AcademicFlow CUL',
+                from_name: params.fromName || 'AcademiFlow',
                 from_email: params.fromEmail,
             },
         });
@@ -60,7 +60,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailRespo
 export async function sendTestEmail(toEmail: string): Promise<SendEmailResponse> {
     return sendEmail({
         to: [toEmail],
-        subject: '✅ Test - AcademicFlow Email Configurado',
-        body: `¡Hola!\n\nEste es un correo de prueba de AcademicFlow Pro.\n\nSi recibes este mensaje, tu sistema de notificaciones por email está funcionando correctamente.\n\n¡Listo para enviar alertas académicas a tus estudiantes!\n\n— AcademicFlow CUL`,
+        subject: '✅ Test - AcademiFlow Email Configurado',
+        body: `¡Hola!\n\nEste es un correo de prueba de AcademiFlow.\n\nSi recibes este mensaje, tu sistema de notificaciones por email está funcionando correctamente.\n\n¡Listo para enviar alertas académicas a tus estudiantes!\n\n— AcademiFlow`,
     });
 }

@@ -116,7 +116,7 @@ export default function Layout() {
                                 "ml-3 font-bold text-lg text-primary transition-all duration-300",
                                 !sidebarOpen ? "md:hidden w-0 opacity-0" : "block w-auto opacity-100"
                             )}>
-                                AcademicFlow
+                                AcademiFlow
                             </span>
                         </div>
 

@@ -29,7 +29,7 @@ import {
   calcularClasesPasadas,
   obtenerFechaClaseMasCercana,
   esFestivo,
-  REGLAMENTO_CUL
+  REGLAMENTO_ACADEMICO
 } from '@/utils/academicUtils';
 
 export function Asistencia() {
@@ -382,8 +382,8 @@ export function Asistencia() {
             <div className="flex items-center gap-4">
               <TrendingUp className="w-5 h-5 text-[#0070a0]" />
               <span className="text-[#626a72]">
-                Asistencia promedio: <strong className={stats.porcentaje < REGLAMENTO_CUL.ASISTENCIA_MINIMA ? 'text-red-600' : 'text-green-600'}>{stats.porcentaje}%</strong>
-                <span className="text-xs ml-1">(mín. {REGLAMENTO_CUL.ASISTENCIA_MINIMA}%)</span>
+                Asistencia promedio: <strong className={stats.porcentaje < REGLAMENTO_ACADEMICO.ASISTENCIA_MINIMA ? 'text-red-600' : 'text-green-600'}>{stats.porcentaje}%</strong>
+                <span className="text-xs ml-1">(mín. {REGLAMENTO_ACADEMICO.ASISTENCIA_MINIMA}%)</span>
               </span>
             </div>
             {infoSemestre && (
