@@ -815,7 +815,5 @@ export function Estudiantes() {
       </Dialog>
 
     </div>
-  )
+  );
 }
-
-
