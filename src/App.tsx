@@ -49,6 +49,9 @@ function App() {
           <Route path="settings" element={<Configuracion />} />
           <Route path="early-warning" element={<EarlyWarning />} />
         </Route>
+
+        {/* Catch-all to login or dashboard */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <Toaster />
     </Router>
