@@ -2,6 +2,10 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/test-deploy",
+      "destination": "/login"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
